@@ -51,8 +51,8 @@ This document tracks proposed enhancements for future versions of the Job Search
 - **Impact**: Better visual feedback on "search velocity."
 
 ### Interactive Referral Network
-- **Feature**: A visual graph (D3.js) showing the connections between your 59 target companies and your 20+ priority referral paths.
-- **Impact**: Easier identification of cluster opportunities where one contact might unlock three companies.
+- **Feature**: A visual graph (D3.js) showing the connections between your target companies and your warm referral paths.
+- **Impact**: Easier identification of cluster opportunities where one contact might unlock multiple companies.
 
 ---
 
