@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Job Search OS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0f0e;--bg2:#161714;--bg3:#1e1f1c;--bg4:#252622;
+  --border:#2a2b27;--border2:#363730;
+  --text:#e8e6de;--text2:#9a9890;--text3:#5a5952;
+  --accent:#b8e04a;--accent2:#8aad2e;--adim:rgba(184,224,74,.12);
+  --red:#e05a4a;--amber:#e0a84a;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;--r:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{width:390px;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;}
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:8px;}
+.logo-text{font-family:var(--mono);font-size:11px;color:var(--text);font-weight:500;}
+.logo-sub{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.hdr-badge{font-family:var(--mono);font-size:9px;background:var(--adim);color:var(--accent);border:1px solid rgba(184,224,74,.2);border-radius:3px;padding:2px 6px;}
+.site-bar{background:var(--bg3);border-bottom:1px solid var(--border);padding:7px 14px;display:flex;align-items:center;gap:8px;}
+.site-icon{font-family:var(--mono);font-size:9px;width:20px;height:20px;border-radius:3px;background:var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.site-url{font-family:var(--mono);font-size:9px;color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.s-ok{color:var(--accent);} .s-warn{color:var(--amber);}
+.job-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:9px 14px;display:none;}
+.job-title-d{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.job-co-d{font-size:11px;color:var(--text2);}
+.job-src{font-family:var(--mono);font-size:9px;color:var(--text3);float:right;}
+.nudge-banner{display:none;background:rgba(224,168,74,.12);border-bottom:1px solid rgba(224,168,74,.25);padding:8px 14px;cursor:pointer;}
+.nudge-banner:hover{background:rgba(224,168,74,.18);}
+.nudge-text{font-family:var(--mono);font-size:10px;color:var(--amber);}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);}
+.tab{flex:1;padding:9px 4px;font-family:var(--mono);font-size:9px;text-align:center;cursor:pointer;color:var(--text3);border:none;border-bottom:2px solid transparent;background:none;transition:all .1s;position:relative;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab:hover:not(.active){color:var(--text2);}
+.tab-badge{position:absolute;top:4px;right:4px;background:var(--amber);color:var(--bg);font-size:8px;border-radius:8px;padding:1px 4px;font-family:var(--mono);display:none;}
+.panel{display:none;padding:12px 14px;max-height:430px;overflow-y:auto;}
+.panel.active{display:block;}
+.score-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.sc-lbl{font-size:11px;color:var(--text2);flex:1;}
+.sc-wt{font-family:var(--mono);font-size:8px;color:var(--text3);width:22px;text-align:right;}
+.sc-track{width:80px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.sc-fill{height:4px;border-radius:2px;background:var(--accent);transition:width .5s ease;}
+.sc-pct{font-family:var(--mono);font-size:10px;color:var(--text);width:28px;text-align:right;flex-shrink:0;}
+.score-total{display:flex;align-items:center;gap:10px;padding:10px 0 4px;border-top:1px solid var(--border);margin-top:4px;}
+.score-num{font-family:var(--mono);font-size:26px;font-weight:500;}
+.score-num.strong{color:var(--accent);} .score-num.mid{color:var(--amber);} .score-num.weak{color:var(--red);}
+.vtag{font-family:var(--mono);font-size:9px;padding:3px 8px;border-radius:10px;}
+.v-apply{background:var(--adim);color:var(--accent);border:1px solid rgba(184,224,74,.2);}
+.v-consider{background:rgba(224,168,74,.1);color:var(--amber);border:1px solid rgba(224,168,74,.2);}
+.v-skip{background:rgba(224,90,74,.1);color:var(--red);border:1px solid rgba(224,90,74,.2);}
+.angles{margin-top:10px;font-size:11px;color:var(--text2);line-height:1.6;}
+.a-pos{color:var(--accent);} .a-neg{color:var(--amber);}
+textarea,input[type=text]{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 10px;resize:none;}
+textarea:focus,input:focus{outline:none;border-color:var(--accent2);}
+select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 10px;appearance:none;cursor:pointer;}
+.ilbl{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.irow{margin-bottom:10px;}
+.btn{width:100%;padding:9px;border-radius:var(--r);font-family:var(--mono);font-size:10px;font-weight:500;cursor:pointer;border:none;transition:all .1s;margin-bottom:6px;letter-spacing:.05em;}
+.btn-p{background:var(--accent);color:var(--bg);} .btn-p:hover{background:var(--accent2);}
+.btn-s{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);} .btn-s:hover{background:var(--bg4);color:var(--text);}
+.prompt-out{background:var(--bg3);border:1px solid var(--border);border-left:2px solid var(--accent2);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:10px;line-height:1.7;color:var(--text2);white-space:pre-wrap;max-height:180px;overflow-y:auto;margin-top:8px;}
+.copy-row{display:flex;gap:6px;margin-top:8px;}
+.claude-btn{flex:1;background:#7c3aed;color:#fff;border:none;border-radius:var(--r);padding:8px;font-family:var(--mono);font-size:9px;cursor:pointer;}
+.claude-btn:hover{background:#6d28d9;}
+.copy-btn{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:var(--r);padding:8px 10px;font-family:var(--mono);font-size:9px;cursor:pointer;}
+.copy-btn:hover{background:var(--bg4);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;}
+.stat-v{font-family:var(--mono);font-size:18px;color:var(--accent);font-weight:500;}
+.stat-l{font-family:var(--mono);font-size:8px;color:var(--text3);text-transform:uppercase;margin-top:2px;}
+.hist-item{padding:7px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.hist-item:last-child{border-bottom:none;}
+.h-cmd{font-family:var(--mono);font-size:9px;background:var(--adim);color:var(--accent);border-radius:3px;padding:2px 5px;flex-shrink:0;}
+.h-detail{font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.h-time{font-family:var(--mono);font-size:9px;color:var(--text3);flex-shrink:0;}
+.nudge-item{background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;}
+.nudge-co{font-weight:500;font-size:13px;color:var(--text);}
+.nudge-meta{font-size:11px;color:var(--text2);margin:2px 0;}
+.nudge-days{font-family:var(--mono);font-size:10px;color:var(--amber);margin-bottom:6px;}
+.nudge-btns{display:flex;gap:6px;}
+.nudge-btn{flex:1;padding:5px 8px;border-radius:var(--r);font-family:var(--mono);font-size:9px;cursor:pointer;border:none;}
+.nb-copy{background:var(--accent);color:var(--bg);} .nb-copy:hover{background:var(--accent2);}
+.nb-done{background:var(--bg4);color:var(--text2);border:1px solid var(--border2);} .nb-done:hover{background:var(--bg3);}
+.sc-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.sc-item:last-child{border-bottom:none;}
+.sc-item:hover .sc-lbl2{color:var(--text);}
+.sc-cmd{font-family:var(--mono);font-size:9px;background:var(--bg3);color:var(--accent);border:1px solid rgba(184,224,74,.15);border-radius:3px;padding:2px 6px;flex-shrink:0;width:44px;text-align:center;}
+.sc-lbl2{font-size:12px;color:var(--text2);flex:1;}
+.sc-arr{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.gist-row{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;}
+.gist-status{font-family:var(--mono);font-size:10px;margin-bottom:6px;}
+.g-ok{color:var(--accent);} .g-err{color:var(--red);} .g-loading{color:var(--text3);}
+.export-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-top:10px;}
+.export-title{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.export-count{font-family:var(--mono);font-size:18px;color:var(--accent);margin-bottom:4px;}
+.export-sub{font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.5;}
+.loading{text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:10px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:12px;height:12px;border:1px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-right:6px;vertical-align:middle;}
+.no-job{text-align:center;padding:20px 14px;}
+.no-job-icon{font-family:var(--mono);font-size:20px;color:var(--text3);margin-bottom:8px;}
+.no-job-text{font-size:12px;color:var(--text2);line-height:1.5;}
+.no-job-sub{font-size:11px;color:var(--text3);margin-top:6px;margin-bottom:12px;}
+.section-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+.toast-bar{display:none;background:var(--adim);border:1px solid rgba(184,224,74,.2);border-radius:var(--r);padding:6px 12px;font-family:var(--mono);font-size:10px;color:var(--accent);text-align:center;margin:8px 14px 0;}
+.toast-bar.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;">
+    <div class="logo-dot"></div>
+    <div><div class="logo-text">Job Search OS</div><div class="logo-sub">BD/Partnerships Edition</div></div>
+  </div>
+  <div class="hdr-badge">v2</div>
+</div>
+<div class="site-bar">
+  <div class="site-icon" id="site-icon">?</div>
+  <div class="site-url" id="site-url">Loading...</div>
+  <div id="site-status"></div>
+</div>
+<div class="job-bar" id="job-bar">
+  <span class="job-src" id="job-src"></span>
+  <div class="job-title-d" id="job-title-d">-</div>
+  <div class="job-co-d" id="job-co-d">-</div>
+</div>
+<div class="nudge-banner" id="nudge-banner">
+  <div class="nudge-text" id="nudge-banner-text">⚠ 0 follow-ups overdue</div>
+</div>
+<div class="toast-bar" id="toast"></div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-score">/score</button>
+  <button class="tab" id="tab-apply">/apply</button>
+  <button class="tab" id="tab-brief">/brief</button>
+  <button class="tab" id="tab-nudges">nudges<span class="tab-badge" id="nudge-badge">0</span></button>
+  <button class="tab" id="tab-history">log</button>
+  <button class="tab" id="tab-shortcuts">⚡</button>
+</div>
+
+<!-- SCORE -->
+<div class="panel active" id="panel-score">
+  <div id="score-loading" class="loading" style="display:none;"><span class="spinner"></span>Extracting job data...</div>
+  <div id="score-no-job" style="display:none;">
+    <div class="no-job">
+      <div class="no-job-icon">◈</div>
+      <div class="no-job-text">No job posting detected.</div>
+      <div class="no-job-sub">Navigate to LinkedIn or a job board, or paste a JD below.</div>
+    </div>
+    <div class="irow"><textarea id="manual-jd" rows="4" placeholder="Paste JD here..."></textarea></div>
+    <div class="irow"><input type="text" id="manual-company" placeholder="Company - Role title"></div>
+    <button class="btn btn-p" id="btn-score-manual">Score manually →</button>
+  </div>
+  <div id="score-content" style="display:none;">
+    <div class="section-label" style="margin-bottom:10px;">Fit analysis</div>
+    <div class="score-row"><span class="sc-lbl">Ecosystem / partner motion</span><span class="sc-wt">25%</span><div class="sc-track"><div class="sc-fill" id="p-sf1" style="width:0%"></div></div><span class="sc-pct" id="p-sp1">-</span></div>
+    <div class="score-row"><span class="sc-lbl">0-to-1 builder requirement</span><span class="sc-wt">25%</span><div class="sc-track"><div class="sc-fill" id="p-sf2" style="width:0%"></div></div><span class="sc-pct" id="p-sp2">-</span></div>
+    <div class="score-row"><span class="sc-lbl">Technical BD depth</span><span class="sc-wt">20%</span><div class="sc-track"><div class="sc-fill" id="p-sf3" style="width:0%"></div></div><span class="sc-pct" id="p-sp3">-</span></div>
+    <div class="score-row"><span class="sc-lbl">AI-native / Edge AI</span><span class="sc-wt">20%</span><div class="sc-track"><div class="sc-fill" id="p-sf4" style="width:0%"></div></div><span class="sc-pct" id="p-sp4">-</span></div>
+    <div class="score-row"><span class="sc-lbl">Seniority / scope</span><span class="sc-wt">10%</span><div class="sc-track"><div class="sc-fill" id="p-sf5" style="width:0%"></div></div><span class="sc-pct" id="p-sp5">-</span></div>
+    <div class="score-total"><span class="score-num" id="p-total">-</span><span id="p-verdict"></span></div>
+    <div class="angles" id="p-angles"></div>
+    <div id="sync-row" style="display:none;margin-top:10px;flex-direction:column;gap:6px;">
+      <div style="display:flex;gap:4px;">
+        <input type="text" id="sync-company" placeholder="Company" style="flex:1;font-size:10px;font-family:var(--mono);background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:4px 6px;color:var(--text);">
+        <input type="text" id="sync-role" placeholder="Role title" style="flex:1.4;font-size:10px;font-family:var(--mono);background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:4px 6px;color:var(--text);">
+      </div>
+      <button class="btn btn-s" id="btn-sync-tracker" style="font-size:9px;font-family:var(--mono);">+ Add to outreach tracker</button>
+      <button class="btn btn-s" id="btn-sync-pipeline" style="font-size:9px;font-family:var(--mono);border-color:var(--accent);">+ Add to pipeline</button>
+    </div>
+    <div class="copy-row" style="margin-top:10px;">
+      <button class="claude-btn" id="btn-open-claude-score">Open in Claude ↗</button>
+      <button class="copy-btn" id="btn-copy-score">Copy prompt</button>
+    </div>
+  </div>
+</div>
+
+<!-- APPLY -->
+<div class="panel" id="panel-apply">
+  <div class="section-label">Application package</div>
+  <div class="irow">
+    <label class="ilbl">Role type</label>
+    <select id="p-apply-type">
+      <option value="hardware">Hardware / consumer device</option>
+      <option value="enterprise">Enterprise platform / hyperscaler</option>
+      <option value="startup">AI startup / 0-to-1 GTM</option>
+      <option value="supply">Supply / publisher / SSP</option>
+      <option value="alliances">Strategic / technology alliances</option>
+      <option value="privacy">Privacy-first / consumer tech</option>
+    </select>
+  </div>
+  <div class="irow">
+    <label class="ilbl">Warm contact?</label>
+    <select id="p-apply-contact">
+      <option value="none">No contact</option>
+      <option value="weak">Weak (2nd degree)</option>
+      <option value="strong">Strong (1st degree)</option>
+    </select>
+  </div>
+  <button class="btn btn-p" id="btn-gen-apply">Generate application package →</button>
+  <div id="apply-out" class="prompt-out" style="display:none;"></div>
+  <div class="copy-row" id="apply-copy" style="display:none;">
+    <button class="claude-btn" id="btn-open-claude-apply">Open in Claude ↗</button>
+    <button class="copy-btn" id="btn-copy-apply">Copy</button>
+  </div>
+</div>
+
+<!-- BRIEF -->
+<div class="panel" id="panel-brief">
+  <div class="section-label">Morning briefing</div>
+  <div class="irow">
+    <label class="ilbl">Pipeline</label>
+    <textarea id="p-brief-pipeline" rows="4" placeholder="Acme Corp - Recruiter screen&#10;Company B - Applied&#10;Company C - Active"></textarea>
+  </div>
+  <div class="irow">
+    <label class="ilbl">Pending follow-ups</label>
+    <textarea id="p-brief-followups" rows="2" placeholder="LinkedIn DM to contact - no reply 3 days..."></textarea>
+  </div>
+  <button class="btn btn-p" id="btn-gen-brief">Generate morning briefing →</button>
+  <div id="brief-out" class="prompt-out" style="display:none;"></div>
+  <div class="copy-row" id="brief-copy" style="display:none;">
+    <button class="claude-btn" id="btn-open-claude-brief">Open in Claude ↗</button>
+    <button class="copy-btn" id="btn-copy-brief">Copy</button>
+  </div>
+</div>
+
+<!-- NUDGES -->
+<div class="panel" id="panel-nudges">
+  <div class="section-label" style="margin-bottom:12px;">Follow-up alerts</div>
+  <div id="nudge-list"><div class="loading"><span class="spinner"></span>Checking follow-ups...</div></div>
+  <div class="divider"></div>
+  <div class="export-box">
+    <div class="export-title">Dashboard live sync</div>
+    <div class="gist-row">
+      <div class="gist-status" id="dash-status"><span class="g-loading">○ Not configured - roles queue locally only</span></div>
+      <input type="text" id="dash-url" placeholder="https://YOUR_GITHUB_USERNAME.github.io/REPO_NAME/" style="margin-bottom:6px;">
+      <button class="btn btn-s" id="btn-save-dash" style="font-size:9px;font-family:var(--mono);">Save dashboard URL</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:10px;">When the dashboard is open in a tab, roles sync live. Otherwise they queue for manual export.</div>
+    <div class="divider"></div>
+    <div class="export-title">Manual export (fallback)</div>
+    <div class="export-count" id="export-count">0</div>
+    <div class="export-sub" id="export-sub">Roles queued for export.</div>
+    <button class="btn btn-s" id="btn-export-os" style="font-size:9px;font-family:var(--mono);">Export scored roles as JSON</button>
+    <div class="divider"></div>
+    <div class="export-title">GitHub Gist profile sync</div>
+    <div class="gist-row">
+      <div class="gist-status" id="gist-status"><span class="g-loading">Not configured</span></div>
+      <input type="text" id="gist-url" placeholder="https://gist.githubusercontent.com/user/..." style="margin-bottom:6px;">
+      <button class="btn btn-s" id="btn-save-gist" style="font-size:9px;font-family:var(--mono);">Save Gist URL</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.5;">Host your profile.json on a public Gist and paste the raw URL here.</div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="panel" id="panel-history">
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-v" id="h-total">0</div><div class="stat-l">Total commands</div></div>
+    <div class="stat-box"><div class="stat-v" id="h-today">0</div><div class="stat-l">Today</div></div>
+    <div class="stat-box"><div class="stat-v" id="h-scored">0</div><div class="stat-l">Roles scored</div></div>
+    <div class="stat-box"><div class="stat-v" id="h-streak">0d</div><div class="stat-l">Streak</div></div>
+  </div>
+  <div class="section-label">Recent activity</div>
+  <div id="history-items"><div style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:10px 0;">No activity yet.</div></div>
+</div>
+
+<!-- SHORTCUTS -->
+<div class="panel" id="panel-shortcuts">
+  <div class="section-label" style="margin-bottom:10px;">Quick commands</div>
+  <div class="sc-item" id="sc-referral"><div class="sc-cmd">/ref</div><div class="sc-lbl2">Referral-first strategy</div><div class="sc-arr">→</div></div>
+  <div class="sc-item" id="sc-prep"><div class="sc-cmd">/prep</div><div class="sc-lbl2">Interview prep pack</div><div class="sc-arr">→</div></div>
+  <div class="sc-item" id="sc-mock"><div class="sc-cmd">/mock</div><div class="sc-lbl2">Mock interview</div><div class="sc-arr">→</div></div>
+  <div class="sc-item" id="sc-debrief"><div class="sc-cmd">/db</div><div class="sc-lbl2">Post-interview debrief</div><div class="sc-arr">→</div></div>
+  <div class="sc-item" id="sc-negotiate"><div class="sc-cmd">/neg</div><div class="sc-lbl2">Offer negotiation</div><div class="sc-arr">→</div></div>
+  <div class="sc-item" id="sc-pattern"><div class="sc-cmd">/pat</div><div class="sc-lbl2">Pattern tracker</div><div class="sc-arr">→</div></div>
+  <div style="height:6px;"></div>
+  <div class="section-label" style="margin-bottom:10px;">Sub-agents</div>
+  <div class="sc-item" id="sc-hiring-manager"><div class="sc-cmd" style="width:52px;">@hm</div><div class="sc-lbl2">@hiring-manager review</div><div class="sc-arr">→</div></div>
+  <div class="sc-item" id="sc-skeptic"><div class="sc-cmd" style="width:52px;">@sk</div><div class="sc-lbl2">@skeptic case against me</div><div class="sc-arr">→</div></div>
+  <div style="height:8px;"></div>
+  <button class="btn btn-s" id="btn-open-os" style="font-size:9px;font-family:var(--mono);">Open Job Search OS dashboard ↗</button>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
