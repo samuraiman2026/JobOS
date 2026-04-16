@@ -401,7 +401,7 @@ select { appearance: none; cursor: pointer; }
       <div class="panel-header">
         <div class="panel-eyebrow" id="dash-eyebrow">-</div>
         <div class="panel-title">Your command center</div>
-        <div class="panel-sub">Your full job search at a glance. Pick a workflow to start.</div>
+        <div class="panel-sub">Your full job search at a glance. Pick a workflow to start. <span style="opacity:0.6;font-size:11px;">Created by Pranjal Mahna</span></div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
           <div id="ext-sync-status" style="font-family:var(--mono);font-size:10px;color:var(--text3);flex:1;"></div>
           <button onclick="checkExtensionSync()" style="font-family:var(--mono);font-size:9px;padding:2px 8px;background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text3);cursor:pointer;white-space:nowrap;" title="Pull latest from extension">↻ Sync</button>
@@ -1839,8 +1839,10 @@ const STORAGE_KEY = 'jobos_v3';
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : defaultState();
-  } catch(e) { return defaultState(); }
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  window._localStorageWasEmpty = true;
+  return defaultState();
 }
 
 function defaultState() {
@@ -1856,6 +1858,16 @@ function defaultState() {
 
 function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch(e) {}
+  try {
+    const extId = window.JOBOS_EXT_ID || document.documentElement.dataset.jobosExtId;
+    if (extId && typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage(
+        extId,
+        { action: 'saveStateBackup', state: STATE },
+        () => { if (chrome.runtime.lastError) {} }
+      );
+    }
+  } catch(e) {}
 }
 
 let STATE = loadState();
@@ -4319,78 +4331,96 @@ function checkExtensionSync() {
     if (el) { el.textContent = '○ Extension messaging unavailable (open via https)'; el.style.color = 'var(--text3)'; }
     return;
   }
-  try {
-    chrome.runtime.sendMessage(extId, { action: 'getPendingSync' }, resp => {
-      if (chrome.runtime.lastError) {
-        if (el) { el.textContent = '○ Extension unreachable - reload extension at chrome://extensions'; el.style.color = 'var(--amber)'; }
-        return;
-      }
-      if (!resp) {
-        if (el) { el.textContent = '○ No response from extension'; el.style.color = 'var(--amber)'; }
-        return;
-      }
-      const incomingContacts = resp.contacts || [];
-      const incomingPipeline = resp.pipeline || [];
-      let contactsAdded = 0, pipelineAdded = 0;
 
-      incomingContacts.forEach(c => {
-        const exists = OT_STATE.contacts.some(x => x.company?.toLowerCase() === c.company?.toLowerCase());
-        if (!exists && c.company) {
-          OT_STATE.contacts.push({
-            id: Date.now() + Math.random(),
-            company: c.company,
-            tier: c.tier || (c.scoreFromExt >= 75 ? '1' : '2'),
-            role: c.role || '',
-            contact: c.contact || '',
-            pov: c.pov || (c.scoreFromExt ? `Scored ${c.scoreFromExt}% in extension` : ''),
-            followups: 0,
-            lastOutreach: c.lastOutreach || '',
-            status: c.status || 'Not Started',
-            selected: false
-          });
-          contactsAdded++;
+  const runPendingSync = (extId) => {
+    try {
+      chrome.runtime.sendMessage(extId, { action: 'getPendingSync' }, resp => {
+        if (chrome.runtime.lastError) {
+          if (el) { el.textContent = '○ Extension unreachable - reload extension at chrome://extensions'; el.style.color = 'var(--amber)'; }
+          return;
+        }
+        if (!resp) {
+          if (el) { el.textContent = '○ No response from extension'; el.style.color = 'var(--amber)'; }
+          return;
+        }
+        const incomingContacts = resp.contacts || [];
+        const incomingPipeline = resp.pipeline || [];
+        let contactsAdded = 0, pipelineAdded = 0;
+
+        incomingContacts.forEach(c => {
+          const exists = OT_STATE.contacts.some(x => x.company?.toLowerCase() === c.company?.toLowerCase());
+          if (!exists && c.company) {
+            OT_STATE.contacts.push({
+              id: Date.now() + Math.random(),
+              company: c.company,
+              tier: c.tier || (c.scoreFromExt >= 75 ? '1' : '2'),
+              role: c.role || '',
+              contact: c.contact || '',
+              pov: c.pov || (c.scoreFromExt ? `Scored ${c.scoreFromExt}% in extension` : ''),
+              followups: 0,
+              lastOutreach: c.lastOutreach || '',
+              status: c.status || 'Not Started',
+              selected: false
+            });
+            contactsAdded++;
+          }
+        });
+
+        incomingPipeline.forEach(r => {
+          const exists = STATE.pipeline.some(x =>
+            x.company?.toLowerCase() === r.company?.toLowerCase() &&
+            x.role?.toLowerCase() === r.role?.toLowerCase()
+          );
+          if (!exists && r.company) {
+            STATE.pipeline.push({
+              id: Date.now() + Math.random(),
+              company: r.company,
+              role: r.role || 'BD Role',
+              url: r.url || '',
+              stage: r.stage || 'Applied',
+              health: r.health || 'green',
+              addedAt: r.addedAt || new Date().toISOString(),
+              lastAction: r.lastAction || new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' }),
+              nextStep: r.nextStep || 'Awaiting response'
+            });
+            pipelineAdded++;
+          }
+        });
+
+        if (contactsAdded > 0) saveOutreach();
+        if (pipelineAdded > 0) saveState();
+
+        // Clear the extension queue so items don't re-sync on next load
+        chrome.runtime.sendMessage(extId, { action: 'acknowledgePendingSync' }, () => {});
+
+        const total = contactsAdded + pipelineAdded;
+        if (total > 0) {
+          renderPipelineMini();
+          renderOutreachTable();
+          updateOutreachMetrics();
+          toast(`Auto-synced ${total} item${total === 1 ? '' : 's'} from extension`);
+          setExtSyncStatus(`Synced ${total} item${total === 1 ? '' : 's'} from extension`, true);
+        } else {
+          setExtSyncStatus('Extension connected · no new items', false);
         }
       });
+    } catch(e) { /* extension not installed or not reachable */ }
+  };
 
-      incomingPipeline.forEach(r => {
-        const exists = STATE.pipeline.some(x =>
-          x.company?.toLowerCase() === r.company?.toLowerCase() &&
-          x.role?.toLowerCase() === r.role?.toLowerCase()
-        );
-        if (!exists && r.company) {
-          STATE.pipeline.push({
-            id: Date.now() + Math.random(),
-            company: r.company,
-            role: r.role || 'BD Role',
-            url: r.url || '',
-            stage: r.stage || 'Applied',
-            health: r.health || 'green',
-            addedAt: r.addedAt || new Date().toISOString(),
-            lastAction: r.lastAction || new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' }),
-            nextStep: r.nextStep || 'Awaiting response'
-          });
-          pipelineAdded++;
-        }
-      });
-
-      if (contactsAdded > 0) saveOutreach();
-      if (pipelineAdded > 0) saveState();
-
-      // Clear the extension queue so items don't re-sync on next load
-      chrome.runtime.sendMessage(extId, { action: 'acknowledgePendingSync' }, () => {});
-
-      const total = contactsAdded + pipelineAdded;
-      if (total > 0) {
-        renderPipelineMini();
-        renderOutreachTable();
-        updateOutreachMetrics();
-        toast(`Auto-synced ${total} item${total === 1 ? '' : 's'} from extension`);
-        setExtSyncStatus(`Synced ${total} item${total === 1 ? '' : 's'} from extension`, true);
-      } else {
-        setExtSyncStatus('Extension connected · no new items', false);
+  if (window._localStorageWasEmpty) {
+    chrome.runtime.sendMessage(extId, { action: 'loadStateBackup' }, resp => {
+      if (!chrome.runtime.lastError && resp?.state?.pipeline?.length) {
+        STATE = resp.state;
+        saveState();
+        window._localStorageWasEmpty = false;
+        init(); // re-renders UI
+        toast('State restored from extension backup');
       }
+      runPendingSync(extId);
     });
-  } catch(e) { /* extension not installed or not reachable */ }
+  } else {
+    runPendingSync(extId);
+  }
 }
 
 </script>

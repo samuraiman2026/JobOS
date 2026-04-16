@@ -285,6 +285,18 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
     });
     return true;
   }
+  if (msg.action === 'saveStateBackup') {
+    chrome.storage.local.set({ 'jobos_state_backup': msg.state }, () =>
+      sendResponse({ saved: true })
+    );
+    return true;
+  }
+  if (msg.action === 'loadStateBackup') {
+    chrome.storage.local.get('jobos_state_backup', data => {
+      sendResponse({ state: data['jobos_state_backup'] || null });
+    });
+    return true;
+  }
   if (msg.action === 'acknowledgePendingSync') {
     // Dashboard has imported all items — clear the queue so they don't re-sync on next load.
     chrome.storage.local.get(OUTREACH_SYNC_KEY, data => {
