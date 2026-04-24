@@ -4,6 +4,7 @@
 ## Global Constraints (Non-Negotiable)
 - **NO EM-DASHES:** Never use em-dashes (-) in any generated text, especially resume bullets, cover notes, or scripts. Use standard hyphens (-) or colons (:) instead.
 - **Data Integrity:** Preserve all metrics ($20M, 120%, etc.) exactly as found in CLAUDE.md.
+- **MCP Connection:** If a Google Workspace MCP tool (Gmail, Calendar) returns an authentication error or "token expired," explicitly notify the user as your first line of output. Do not hallucinate data if the tool fails.
 
 ## /brief - Morning Briefing
 **Purpose:** Generate a high-impact daily game plan.

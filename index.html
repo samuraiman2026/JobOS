@@ -1980,7 +1980,13 @@ function defaultState() {
 }
 
 function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch(e) {}
+  try { 
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); 
+  } catch(e) {
+    if (e.name === 'QuotaExceededError') {
+      toast('Storage full! Use /export to clear old roles');
+    }
+  }
   // Mirror to extension's chrome.storage.local so state survives browser restarts
   // that clear localStorage (e.g. "Clear cookies on exit" browser settings).
   try {
@@ -2703,7 +2709,9 @@ function runBrief() {
   const nudgeSummary = overdue.length
     ? overdue.map(c => '  ' + c.company + (c.contact ? ' ('+c.contact+')' : '') + ' - last: ' + c.lastOutreach).join('\n')
     : (followups || 'None flagged');
-  const prompt = `Run /brief using the rules in WORKFLOW_GUIDE.md.
+  const prompt = `Run /brief using the rules in WORKFLOW_GUIDE.md. 
+
+Check your MCP connection health for Gmail and Calendar before proceeding.
 
 <pipeline>
 ${pipelineSummary}
@@ -4578,7 +4586,13 @@ function loadOutreach() {
 }
 
 function saveOutreach() {
-  try { localStorage.setItem(OT_KEY, JSON.stringify(OT_STATE)); } catch(e) {}
+  try { 
+    localStorage.setItem(OT_KEY, JSON.stringify(OT_STATE)); 
+  } catch(e) {
+    if (e.name === 'QuotaExceededError') {
+      toast('Storage full! Use /export to clear old data');
+    }
+  }
   // Mirror to extension backup so clearing cookies doesn't wipe the tracker
   try {
     const extId = window.JOBOS_EXT_ID || document.documentElement.dataset.jobosExtId;
