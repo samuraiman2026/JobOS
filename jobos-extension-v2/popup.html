@@ -115,7 +115,7 @@ select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-r
 <div class="hdr">
   <div style="display:flex;align-items:center;">
     <div class="logo-dot"></div>
-    <div><div class="logo-text">Job Search OS</div><div class="logo-sub">BD/Partnerships Edition</div></div>
+    <div><div class="logo-text">Job Search OS</div><div class="logo-sub">Community Edition</div></div>
   </div>
   <div class="hdr-badge">v2</div>
 </div>
@@ -171,7 +171,8 @@ select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-r
         <input type="text" id="sync-role" placeholder="Role title" style="flex:1.4;font-size:10px;font-family:var(--mono);background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:4px 6px;color:var(--text);">
       </div>
       <button class="btn btn-s" id="btn-sync-tracker" style="font-size:9px;font-family:var(--mono);">+ Add to outreach tracker</button>
-      <button class="btn btn-s" id="btn-sync-pipeline" style="font-size:9px;font-family:var(--mono);border-color:var(--accent);">+ Add to pipeline</button>
+      <button class="btn btn-s" id="btn-sync-pipeline" style="font-size:9px;font-family:var(--mono);border-color:var(--accent);">+ Queue for review</button>
+      <button class="btn btn-s" id="btn-fill-resume" style="font-size:9px;font-family:var(--mono);border-color:var(--accent2);">→ Fill /resume</button>
     </div>
     <div class="copy-row" style="margin-top:10px;">
       <button class="claude-btn" id="btn-open-claude-score">Open in Claude ↗</button>
@@ -183,6 +184,12 @@ select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-r
 <!-- APPLY -->
 <div class="panel" id="panel-apply">
   <div class="section-label">Application package</div>
+  <div class="irow">
+    <label class="ilbl">Company &amp; role</label>
+    <select id="p-apply-pipeline" style="font-family:var(--mono);font-size:10px;">
+      <option value="">— current page / manual JD —</option>
+    </select>
+  </div>
   <div class="irow">
     <label class="ilbl">Role type</label>
     <select id="p-apply-type">
@@ -199,6 +206,7 @@ select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-r
     <select id="p-apply-contact">
       <option value="none">No contact</option>
       <option value="weak">Weak (2nd degree)</option>
+      <option value="weak1">Weak (1st degree)</option>
       <option value="strong">Strong (1st degree)</option>
     </select>
   </div>
@@ -215,7 +223,7 @@ select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-r
   <div class="section-label">Morning briefing</div>
   <div class="irow">
     <label class="ilbl">Pipeline</label>
-    <textarea id="p-brief-pipeline" rows="4" placeholder="Acme Corp - Recruiter screen&#10;Company B - Applied&#10;Company C - Active"></textarea>
+    <textarea id="p-brief-pipeline" rows="4" placeholder="Acme Corp - Recruiter screen&#10;Microsoft - Applied&#10;TechCo - Active"></textarea>
   </div>
   <div class="irow">
     <label class="ilbl">Pending follow-ups</label>
@@ -238,7 +246,7 @@ select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-r
     <div class="export-title">Dashboard live sync</div>
     <div class="gist-row">
       <div class="gist-status" id="dash-status"><span class="g-loading">○ Not configured - roles queue locally only</span></div>
-      <input type="text" id="dash-url" placeholder="https://YOUR_GITHUB_USERNAME.github.io/REPO_NAME/" style="margin-bottom:6px;">
+      <input type="text" id="dash-url" placeholder="https://YOUR_GITHUB_USERNAME.github.io/DigiJobOS/" style="margin-bottom:6px;">
       <button class="btn btn-s" id="btn-save-dash" style="font-size:9px;font-family:var(--mono);">Save dashboard URL</button>
     </div>
     <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:10px;">When the dashboard is open in a tab, roles sync live. Otherwise they queue for manual export.</div>

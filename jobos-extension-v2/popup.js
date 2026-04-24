@@ -9,20 +9,20 @@ const DASHBOARD_KEY  = 'jobos_dashboard_url';
 const NUDGE_DAYS     = 10;
 
 let jobData = null;
+let jobDataFromPage = null; // preserved original page scrape
 let prompts = {};
 let profile = null;
 
 // ── FALLBACK PROFILE ─────────────────────────────────
-// SETUP: Replace this with your own background summary and bullet guidance.
-// This is used when no profile URL is configured in the extension settings.
-// Ideally, host your CLAUDE.md as a GitHub Gist and paste the raw URL in settings.
 const FALLBACK_PROFILE = {
   background: "[Your background summary — paste from CLAUDE.md. Include your top companies, roles, and 3-5 key metrics.]",
   bulletMap: {
-    enterprise: "Lead with: [Your strongest enterprise or large-company bullet].",
+    hardware:   "Lead with: [Your hardware/device bullet].",
+    enterprise: "Lead with: [Your strongest enterprise/scale bullet].",
     startup:    "Lead with: [Your 0-to-1 or founding-role bullet].",
-    technical:  "Lead with: [Your most technical or product-depth bullet].",
-    general:    "Lead with: [Your highest-impact metric and the role that generated it]."
+    
+    
+    general:    "Lead with: [Your highest-impact metric and role]."
   }
 };
 
@@ -56,6 +56,7 @@ function wireButtons() {
   on('btn-score-manual',    scoreManual);
   on('btn-sync-tracker',    syncToTracker);
   on('btn-sync-pipeline',   syncToPipeline);
+  on('btn-fill-resume',     fillResume);
   on('btn-open-claude-score', () => openClaude('score'));
   on('btn-copy-score',        () => copyP('score'));
 
@@ -63,6 +64,7 @@ function wireButtons() {
   on('btn-gen-apply',         generateApply);
   on('btn-open-claude-apply', () => openClaude('apply'));
   on('btn-copy-apply',        () => copyP('apply'));
+  document.getElementById('p-apply-pipeline').addEventListener('change', onApplyPipelineSelect);
 
   // Brief tab
   on('btn-gen-brief',         generateBrief);
@@ -200,6 +202,7 @@ async function detectJobPage() {
     document.getElementById('score-loading').style.display = 'none';
     if (resp && (resp.title || resp.jobText)) {
       jobData = resp;
+      jobDataFromPage = resp;
       showJobDetected(resp);
       autoScore(resp);
     } else { showNoJob(); }
@@ -242,7 +245,9 @@ function runScoreEngine(jdText, title, company) {
   const s3 = kw(jdText, ['technical','engineering','api','integration','sdk','architecture','infrastructure','protocol','developer','product','saas']);
   const s4 = kw(jdText, ['ai','artificial intelligence','ml','machine learning','llm','edge','on-device','genai','model','intelligent','deep learning','neural']);
   const s5 = kw(jdText, ['director','senior manager','vp','vice president','lead','head of','strategic','executive','global','principal']);
-  const total = Math.round(s1*.25 + s2*.25 + s3*.20 + s4*.20 + s5*.10);
+  const base = Math.round(s1*.25 + s2*.25 + s3*.20 + s4*.20 + s5*.10);
+  const { pts: penaltyPts, flags: penaltyFlags } = calcPenalties(jdText);
+  const total = Math.max(0, base - penaltyPts);
 
   document.getElementById('score-no-job').style.display = 'none';
   document.getElementById('score-content').style.display = 'block';
@@ -255,7 +260,7 @@ function runScoreEngine(jdText, title, company) {
     te.className = 'score-num ' + (total>=75?'strong':total>=50?'mid':'weak');
     const ve = document.getElementById('p-verdict');
     ve.innerHTML = total>=75 ? '<span class="vtag v-apply">✓ Apply now</span>' : total>=50 ? '<span class="vtag v-consider">○ Consider</span>' : '<span class="vtag v-skip">✗ Skip</span>';
-    document.getElementById('p-angles').innerHTML = buildAngles(jdText);
+    document.getElementById('p-angles').innerHTML = buildAngles(jdText, penaltyFlags);
     document.getElementById('sync-row').style.display = 'flex';
     document.getElementById('sync-company').value = company || '';
     document.getElementById('sync-role').value = title || '';
@@ -270,22 +275,86 @@ function kw(text, words) {
   return Math.round(50 + Math.min(hits / Math.max(words.length * 0.35, 1), 1) * 50);
 }
 
+// Detect must-have requirements that are genuine gaps and return a penalty + flags.
+// Applied AFTER the weighted score so gaps actively pull the number down.
+function calcPenalties(jd) {
+  const flags = [];
+  let pts = 0;
+
+  // Hyperscaler-specific must-have (AWS/Azure/GCP as primary requirement, not just mentioned)
+  const hyperscalerReq =
+    /hyperscaler/i.test(jd) ||
+    /(must.have|required|mandatory|essential|minimum).{0,80}(aws|azure|gcp|google cloud|cloud partner)/i.test(jd) ||
+    /(aws|azure|gcp|google cloud).{0,50}(required|must.have|mandatory|essential|certification)/i.test(jd) ||
+    /\d\+?\s*years?.{0,40}(aws|azure|gcp|hyperscaler|google cloud)/i.test(jd);
+  if (hyperscalerReq) {
+    flags.push('Hyperscaler must-have (AWS/Azure/GCP) — not a primary credential (-18)');
+    pts += 18;
+  }
+
+  // Unusually high year requirements for specific skills (8+, 10+, 12+)
+  const highYearMatch = jd.match(/\b(8|9|10|11|12|15|20)\+?\s*years?\b/i);
+  if (highYearMatch) {
+    flags.push(`${highYearMatch[0].trim()} minimum detected — verify this is the seniority bar, not a domain req (-8)`);
+    pts += 8;
+  }
+
+  // Quota-carrying AE role, not a BD/partnerships role
+  if (/(carry\s+a\s+quota|quota.carrier|sales\s+quota|revenue\s+quota|closed.{0,20}\$[\d]+M?\s+arr|close\s+rate)/i.test(jd) &&
+      !/(partner|ecosystem|alliance|channel|platform)/i.test(jd)) {
+    flags.push('Role is mismatched with core background (-15)');
+    pts += 15;
+  }
+
+  // Federal / government / clearance — hard block
+  if (/(federal|department\s+of\s+defense|\bdod\b|security\s+clearance|clearance\s+required|top\s+secret|ts\/sci)/i.test(jd)) {
+    flags.push('Clearance or federal requirement — not applicable (-22)');
+    pts += 22;
+  }
+
+  // Healthcare domain without a tech/platform angle
+  if (/(healthcare|hipaa|\behr\b|medical\s+device|life\s+sciences|pharmaceutical|clinical\s+trials)/i.test(jd) &&
+      !/(ai|platform|api|developer|partner)/i.test(jd)) {
+    flags.push('Healthcare-specific domain — no direct credential (-10)');
+    pts += 10;
+  }
+
+  // Specific platform certifications that are hard requirements
+  if (/(salesforce\s+certified|salesforce\s+admin|sap\s+certif|oracle\s+certif|servicenow\s+certif)/i.test(jd)) {
+    flags.push('Platform certification required — not held (-12)');
+    pts += 12;
+  }
+
+  // User speaks Hindi and English only — penalize hard foreign-language requirements
+  if (/(fluent\s+in|native\s+(speaker|proficiency)|full\s+professional\s+proficiency\s+in|business\s+proficiency\s+in|must\s+(speak|be\s+fluent)|bilingual|proficiency\s+in)\s+(french|german|spanish|mandarin|chinese|japanese|korean|portuguese|italian|dutch|arabic|russian|turkish|polish|hebrew|thai|vietnamese)/i.test(jd)) {
+    flags.push('Non-English/Hindi language required — not a primary language (-18)');
+    pts += 18;
+  }
+
+  return { pts: Math.min(pts, 40), flags };
+}
+
 function anim(fId, pId, val) {
   document.getElementById(fId).style.width = val + '%';
   document.getElementById(pId).textContent = val + '%';
 }
 
-function buildAngles(jd) {
+function buildAngles(jd, penaltyFlags = []) {
   const pos=[], neg=[];
-  if (jd.includes('ecosystem')||jd.includes('isv')||jd.includes('platform')) pos.push('Ecosystem builder match - check CLAUDE.md for your strongest proof point here');
-  if (jd.includes('0 to 1')||jd.includes('from scratch')||jd.includes('founding')||jd.includes('build')) pos.push('0-to-1 builder signal - your founding/first-hire story maps here');
-  if (jd.includes('ai')||jd.includes('on-device')||jd.includes('edge')) pos.push('AI/domain angle - use your most relevant technical or domain story');
-  if (jd.includes('hardware')||jd.includes('device')||jd.includes('oem')) pos.push('Hardware/OEM signal - surface any device or distribution experience');
-  if (jd.includes('saas')&&!jd.includes('enterprise')) neg.push('SaaS-only framing - emphasize your API-first or product BD experience');
+  if (jd.includes('ecosystem')||jd.includes('isv')||jd.includes('platform')) pos.push('Ecosystem builder match - check CLAUDE.md for strongest proof point');
+  if (jd.includes('0 to 1')||jd.includes('from scratch')||jd.includes('founding')||jd.includes('build')) pos.push('0-to-1 builder signal - founding/first-hire story maps here');
+  if (jd.includes('ai')||jd.includes('on-device')||jd.includes('edge')) pos.push('AI/domain angle - use most relevant technical or domain story');
+  if (jd.includes('hardware')||jd.includes('device')||jd.includes('oem')) pos.push('Hardware/OEM signal - surface device/distribution experience');
+  if (jd.includes('saas')&&!jd.includes('enterprise')) neg.push('SaaS-only framing - emphasize your specific API or product experience');
   if (jd.includes('sales')&&!jd.includes('partnership')) neg.push('Sales-heavy JD - reframe as partner-assisted and ecosystem revenue');
   if (!jd.includes('partner')&&!jd.includes('ecosystem')) neg.push('Light partnership language - verify role type before applying');
-  return (pos.length?'<span class="a-pos">+ </span>'+pos.join('<br><span class="a-pos">+ </span>'):'') +
-    (neg.length?'<br><span class="a-neg">− </span>'+neg.join('<br><span class="a-neg">− </span>'):'');
+  const posHtml = pos.length ? '<span class="a-pos">+ </span>'+pos.join('<br><span class="a-pos">+ </span>') : '';
+  const negHtml = neg.length ? '<br><span class="a-neg">− </span>'+neg.join('<br><span class="a-neg">− </span>') : '';
+  const penHtml = penaltyFlags.length
+    ? '<br><span style="color:#e05a4a;font-size:9px;font-family:var(--mono);">▼ </span>'
+      + penaltyFlags.join('<br><span style="color:#e05a4a;font-size:9px;font-family:var(--mono);">▼ </span>')
+    : '';
+  return posHtml + negHtml + penHtml;
 }
 
 // ── PROMPT BUILDERS ───────────────────────────────────
@@ -296,6 +365,44 @@ function buildScorePrompt(title, company, jd) {
 <jd>
 ${jd || '[paste JD here]'}
 </jd>`;
+}
+
+// ── APPLY PIPELINE DROPDOWN ───────────────────────────
+let applyPipelineItems = [];
+
+function populateApplyPipeline() {
+  chrome.storage.local.get([OUTREACH_KEY, 'jobos_v3_backup'], data => {
+    const CLOSED = ['Rejected','Withdrawn','Closed'];
+    const outreachItems = (data[OUTREACH_KEY]?.pipeline || []).filter(r => r.jd);
+    const backupItems = (data['jobos_v3_backup']?.pipeline || [])
+      .filter(r => r.jd && !CLOSED.includes(r.stage))
+      .map(r => ({ company: r.company, role: r.role, jd: r.jd, url: r.url || '' }));
+    const seen = new Set(outreachItems.map(r => `${r.company}|${r.role}`));
+    applyPipelineItems = [...outreachItems, ...backupItems.filter(r => !seen.has(`${r.company}|${r.role}`))];
+    const sel = document.getElementById('p-apply-pipeline');
+    while (sel.options.length > 1) sel.remove(1);
+    applyPipelineItems.forEach((r, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${r.company} — ${r.role}`;
+      sel.appendChild(opt);
+    });
+    if (!applyPipelineItems.length) {
+      const opt = document.createElement('option');
+      opt.value = ''; opt.textContent = '— no pipeline roles with JD saved —'; opt.disabled = true;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+function onApplyPipelineSelect() {
+  const sel = document.getElementById('p-apply-pipeline');
+  const idx = sel.value;
+  if (idx === '') { jobData = jobDataFromPage; return; }
+  const r = applyPipelineItems[parseInt(idx)];
+  if (!r) return;
+  jobData = { company: r.company, title: r.role, jobText: r.jd, url: r.url || '' };
+  toast(`Loaded: ${r.company} — ${r.role}`);
 }
 
 function generateApply() {
@@ -313,7 +420,7 @@ function generateApply() {
 ${jd}
 </jd>
 <bullet_guidance>${bm}</bullet_guidance>
-<contact_context>${contact==='none'?'No warm contact - cold referral strategy needed':contact==='weak'?'Weak 2nd-degree - warm outreach angle needed':'Strong 1st-degree contact - referral path available'}</contact_context>`;
+<contact_context>${contact==='none'?'No warm contact - cold referral strategy needed':contact==='weak'?'Weak 2nd-degree - warm outreach angle needed':contact==='weak1'?'Weak 1st-degree - know them but not closely, use a specific angle to re-engage before applying':'Strong 1st-degree contact - referral path available, activate directly'}</contact_context>`;
 
   const el = document.getElementById('apply-out');
   el.textContent = prompts.apply; el.style.display = 'block';
@@ -333,7 +440,14 @@ ${pipeline || 'Reference my current pipeline in CLAUDE.md if not provided here.'
 
 <overdue_followups>
 ${followups || 'None flagged.'}
-</overdue_followups>`;
+</overdue_followups>
+
+<gmail_sources>
+Also search Gmail for emails from these senders and include any new role opportunities, status updates, or recruiter messages in the briefing:
+- help@welcometothejungle.com (job board alerts)
+- donotreply@email.careers.microsoft.com (Microsoft Careers)
+Limit to last 48–72 hours. Summarize subject + any role/location mentioned.
+</gmail_sources>`;
 
   const el = document.getElementById('brief-out');
   el.textContent = prompts.brief; el.style.display = 'block';
@@ -368,17 +482,34 @@ function syncToPipeline() {
   const company = document.getElementById('sync-company').value.trim() || jobData.company || 'Unknown';
   const role = document.getElementById('sync-role').value.trim() || jobData.title || '';
   const total = parseInt(document.getElementById('p-total').textContent) || 0;
-  chrome.runtime.sendMessage({ action: 'syncPipeline', data: { company, role, score: total, url: jobData.url || '' } }, resp => {
+  chrome.runtime.sendMessage({ action: 'syncPipeline', data: { company, role, score: total, url: jobData.url || '', jd: jobData.jobText || '' } }, resp => {
     if (chrome.runtime.lastError) { toast('Sync error - try again'); return; }
     const btn = document.getElementById('btn-sync-pipeline');
     if (resp?.added) {
-      toast(resp.liveSynced ? `${company} added to pipeline - live ✓` : `${company} queued - open dashboard to sync`);
-      if (btn) { btn.textContent = resp.liveSynced ? '✓ Live synced' : '✓ Queued'; btn.disabled = true; }
+      toast(resp.liveSynced ? `${company} → inbox live ✓` : `${company} queued for inbox`);
+      if (btn) { btn.textContent = resp.liveSynced ? '✓ In inbox' : '✓ Queued'; btn.disabled = true; }
       loadExportCount();
       logUsage('/pipeline-sync', company);
     } else {
       toast(`${company} already in pipeline`);
       if (btn) { btn.textContent = '✓ Already tracked'; btn.disabled = true; }
+    }
+  });
+}
+
+function fillResume() {
+  if (!jobData) { toast('No job data - navigate to a job page first'); return; }
+  const company = document.getElementById('sync-company').value.trim() || jobData.company || '';
+  const role    = document.getElementById('sync-role').value.trim()    || jobData.title   || '';
+  const jd      = jobData.jobText || '';
+  chrome.runtime.sendMessage({ action: 'fillResume', data: { company, role, jd } }, resp => {
+    if (chrome.runtime.lastError) { toast('Dashboard not open - open it first'); return; }
+    const btn = document.getElementById('btn-fill-resume');
+    if (resp?.filled) {
+      toast('Filled /resume - check dashboard');
+      if (btn) { btn.textContent = '✓ Filled'; btn.disabled = true; }
+    } else {
+      toast('Dashboard not found - open it first');
     }
   });
 }
@@ -601,6 +732,7 @@ function switchTab(id) {
   if (panel) panel.classList.add('active');
   if (id === 'history') loadHistory();
   if (id === 'nudges') { loadNudges(); loadExportCount(); loadGistConfig(); loadDashboardConfig(); }
+  if (id === 'apply') populateApplyPipeline();
 }
 
 // ── TOAST ─────────────────────────────────────────────

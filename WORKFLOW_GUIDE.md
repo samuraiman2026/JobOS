@@ -1,15 +1,15 @@
-# Job Search OS - Workflow Guide
+# Job Search OS - Workflow Guide (v4.2)
 # Reference this file for all slash command instructions.
 
 ## Global Constraints (Non-Negotiable)
-- **NO EM-DASHES:** Never use em-dashes in any generated text, especially resume bullets, cover notes, or scripts. Use standard hyphens (-) or colons (:) instead.
-- **Data Integrity:** Preserve all metrics exactly as found in CLAUDE.md. Never invent or modify numbers.
+- **NO EM-DASHES:** Never use em-dashes (-) in any generated text, especially resume bullets, cover notes, or scripts. Use standard hyphens (-) or colons (:) instead.
+- **Data Integrity:** Preserve all metrics ($20M, 120%, etc.) exactly as found in CLAUDE.md.
 
 ## /brief - Morning Briefing
 **Purpose:** Generate a high-impact daily game plan.
 **Instructions:**
 1. Search Google Calendar for today's events.
-2. Search Gmail for: (a) new LinkedIn job alert emails today, (b) recruiter replies in the last 3 days.
+2. Search Gmail for: (a) new emails from senders listed in `SOURCES.md`, (b) new LinkedIn job alert emails today, (c) recruiter replies in the last 3 days.
 3. Review the provided `<pipeline>` and `<overdue_followups>`.
 **Deliver:**
 - Top 3 actions for today, ranked by impact.
@@ -18,6 +18,7 @@
 - Referral outreach to send today.
 - One-line status on each active pipeline role.
 **Constraint:** 90-second read. Game plan, not a report.
+**Seniority rule:** Do not flag Senior Manager or Manager roles as "below target" unless the stated or estimated salary is below $150K. A strong skill match overrides title level.
 
 ## /score - JD Fit Analysis
 **Purpose:** Analyze JD fit against profile dimensions.
@@ -29,6 +30,7 @@
    - AI-native / Edge AI angle (20%)
    - Seniority and scope match (10%)
 2. Calculate overall weighted score + verdict: Apply Now / Apply with Bridge / Pass.
+3. **Seniority rule:** Do NOT penalize Senior Manager or Manager titles. Score seniority on scope, ownership, and team size - not title alone. Only flag a seniority gap if the role is clearly IC-only (no team, no budget ownership) or if stated compensation is below $150K.
 **Deliver:**
 - Weighted score + Verdict.
 - 2 strongest angles + biggest gap for this specific role.
@@ -61,10 +63,10 @@
 2. Map questions to best STAR stories (A-E) in CLAUDE.md.
 **Deliver:**
 - What the company cares about right now.
-- 10 role-specific questions likely to be asked for this function and level.
-- Best story to use for each question (mapped to A-E in CLAUDE.md).
+- 10 BD-specific questions (Partner motion, deal structure, ecosystem GTM, etc.).
+- Best story to use for each question.
 - 3 gap questions with exact bridge narratives.
-- "Tell me about yourself" (90 seconds, tailored to this specific role).
+- "Tell me about yourself" (90 seconds, tailored).
 
 ## /mock - Mock Interview
 **Purpose:** Interactive practice with live scoring.

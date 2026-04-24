@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<Major Partner charset="UTF-8">
+<Major Partner name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="data:,">
 <title>Job Search OS</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
@@ -118,6 +118,14 @@ select { appearance: none; cursor: pointer; }
 .pipeline-table tr:hover td { background: var(--bg3); }
 .stage-pill { display: inline-block; font-family: var(--mono); font-size: 9px; padding: 3px 8px; border-radius: 10px; }
 .stage-active { background: rgba(184,224,74,0.12); color: var(--accent); }
+.stage-review { background: rgba(184,224,74,0.08); color: var(--accent); border: 1px solid rgba(184,224,74,0.2); }
+.inbox-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r2); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 14px; }
+.inbox-card:hover { border-color: var(--border2); }
+.inbox-card-body { flex: 1; min-width: 0; }
+.inbox-card-company { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.inbox-card-role { font-size: 11px; color: var(--text2); margin-bottom: 8px; font-family: var(--mono); }
+.inbox-card-Major Partner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.inbox-card-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
 .stage-applied { background: rgba(74,168,224,0.12); color: var(--blue); }
 .stage-screen { background: rgba(224,168,74,0.12); color: var(--amber); }
 .stage-cold { background: rgba(224,90,74,0.12); color: var(--red); }
@@ -256,23 +264,24 @@ select { appearance: none; cursor: pointer; }
 /* LOADING */
 @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 .loading { animation: pulse 1.4s ease-in-out infinite; }
+.jd-stats { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 5px; min-height: 13px; letter-spacing: 0.02em; }
+.jd-stats.trimmed { color: var(--accent); }
 </style>
 </head>
 <body>
 
 <div id="password-gate" style="position:fixed;inset:0;background:#0e0f0e;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:'DM Mono',monospace;color:#b8e04a;">
-  <div style="margin-bottom:24px;font-style:italic;font-size:13px;letter-spacing:0.1em;color:#5a5952;">JOB SEARCH OS · PRIVATE INSTANCE</div>
+  <div style="margin-bottom:24px;font-style:italic;font-size:13px;letter-spacing:0.1em;color:#5a5952;">JOB SEARCH OS · RESTRICTED ACCESS</div>
   <div style="background:#161714;border:1px solid #2a2b27;padding:32px;border-radius:12px;width:320px;text-align:center;">
     <div style="font-family:'Instrument Serif',serif;font-size:24px;font-style:italic;color:#e8e6de;margin-bottom:20px;">Enter access key</div>
     <input type="password" id="pw-input" autofocus style="width:100%;background:#1e1f1c;border:1px solid #363730;border-radius:8px;color:#e8e6de;padding:12px;text-align:center;font-size:16px;outline:none;border-color:#b8e04a;">
     <div id="pw-error" style="color:#e05a4a;font-size:11px;margin-top:12px;display:none;font-family:'DM Mono',monospace;">INVALID ACCESS KEY</div>
   </div>
-  <div style="margin-top:24px;font-size:10px;color:#5a5952;">v4.4 · Personal Instance</div>
+  <div style="margin-top:24px;font-size:10px;color:#5a5952;">v4.4 · Secure Instance</div>
 </div>
 
 <script>
 (function() {
-  // SETUP: Change this to your own password before deploying.
   const KEY = 'ChangeThisPassword';
   const gate = document.getElementById('password-gate');
   const input = document.getElementById('pw-input');
@@ -304,13 +313,17 @@ select { appearance: none; cursor: pointer; }
     <div class="sidebar-logo">
       <div class="logo-label">Job Search</div>
       <div class="logo-title">Operating System</div>
-      <div class="logo-badge">v4.4</div>
+      <div class="logo-badge">Template Edition</div>
     </div>
 
     <div class="sidebar-section">
       <div class="sidebar-section-label">Overview</div>
       <button class="nav-item active" onclick="nav('dashboard')" id="nav-dashboard">
         <span class="ni-icon">◈</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="nav('inbox')" id="nav-inbox">
+        <span class="ni-icon">⊙</span> Inbox
+        <span class="ni-badge" id="badge-inbox" style="background:var(--accent);color:#111;display:none;">0</span>
       </button>
       <button class="nav-item" onclick="nav('pipeline')" id="nav-pipeline">
         <span class="ni-icon">⊞</span> Pipeline
@@ -391,6 +404,10 @@ select { appearance: none; cursor: pointer; }
       <div class="stat-row"><span class="stat-label">Interviews</span><span class="stat-val" id="stat-ints">0</span></div>
       <div class="stat-row"><span class="stat-label">Streak</span><span class="stat-val" id="stat-streak">0d</span></div>
     </div>
+
+    <div style="padding: 14px 18px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: 0.05em;">
+      Job Search Operating System
+    </div>
   </aside>
 
   <!-- MAIN -->
@@ -398,10 +415,18 @@ select { appearance: none; cursor: pointer; }
 
     <!-- DASHBOARD -->
     <div class="panel active" id="panel-dashboard">
+      <div id="daily-affirmation" style="background:var(--bg2);border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:var(--r2);padding:12px 16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px;">
+        <span style="font-family:var(--mono);font-size:14px;color:var(--accent);flex-shrink:0;line-height:1.4;">"</span>
+        <div style="flex:1;">
+          <div id="affirmation-text" style="font-size:13px;color:var(--text);line-height:1.6;font-style:italic;"></div>
+          <div id="affirmation-author" style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:5px;letter-spacing:0.05em;"></div>
+        </div>
+      </div>
+
       <div class="panel-header">
         <div class="panel-eyebrow" id="dash-eyebrow">-</div>
         <div class="panel-title">Your command center</div>
-        <div class="panel-sub">Your full job search at a glance. Pick a workflow to start. <span style="opacity:0.6;font-size:11px;">Created by Pranjal Mahna</span></div>
+        <div class="panel-sub">Your full job search at a glance. Pick a workflow to start.</div>
         <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
           <div id="ext-sync-status" style="font-family:var(--mono);font-size:10px;color:var(--text3);flex:1;"></div>
           <button onclick="checkExtensionSync()" style="font-family:var(--mono);font-size:9px;padding:2px 8px;background:transparent;border:1px solid var(--border2);border-radius:4px;color:var(--text3);cursor:pointer;white-space:nowrap;" title="Pull latest from extension">↻ Sync</button>
@@ -499,6 +524,19 @@ select { appearance: none; cursor: pointer; }
       </div>
     </div>
 
+    <!-- INBOX -->
+    <div class="panel" id="panel-inbox">
+      <div class="panel-header">
+        <div class="panel-eyebrow">Triage · /inbox</div>
+        <div class="panel-title">Role inbox</div>
+        <div class="panel-sub">Roles queued for review. Score high enough to apply? Move it. Not a fit? Pass it. Nothing sits here unactioned.</div>
+      </div>
+      <div id="inbox-empty" style="display:none;padding:40px 0;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3);">
+        Inbox zero. Add roles via the Chrome extension or the pipeline + Add role button with stage "To Review".
+      </div>
+      <div id="inbox-list"></div>
+    </div>
+
     <!-- PIPELINE -->
     <div class="panel" id="panel-pipeline">
       <div class="panel-header">
@@ -541,7 +579,7 @@ select { appearance: none; cursor: pointer; }
       <div class="panel-header">
         <div class="panel-eyebrow">Networking · Job Search and Networking Playbook</div>
         <div class="panel-title">Outreach tracker</div>
-        <div class="panel-sub">Track daily reach-outs, follow-up counts, and outreach velocity across your target companies.</div>
+        <div class="panel-sub">56 companies. Track daily reach-outs, follow-up counts, and outreach velocity.</div>
       </div>
 
       <div class="metric-row" style="grid-template-columns:repeat(5,minmax(0,1fr));">
@@ -699,7 +737,7 @@ select { appearance: none; cursor: pointer; }
         <div class="card-body" style="line-height:1.8;font-size:12px;color:var(--text2);">
           When you paste the generated prompt into your <strong style="color:var(--text);">Job Search OS Claude Project</strong>, Claude will:<br>
           · Read today's Google Calendar via MCP<br>
-          · Search your Gmail for new LinkedIn alerts + recruiter replies<br>
+          · Search your Gmail for new LinkedIn alerts, recruiter replies, Welcome to the Jungle + Microsoft Careers emails<br>
           · Pull your live pipeline (auto-included below - no need to type it)<br>
           · Flag overdue follow-ups from your outreach tracker<br>
           · Give you your top 3 actions for the day
@@ -708,9 +746,20 @@ select { appearance: none; cursor: pointer; }
 
       <div id="brief-calendar"></div>
 
+      <div id="brief-yesterday-wrap" style="display:none;margin-bottom:14px;">
+        <div class="card" style="border-left:2px solid var(--amber);">
+          <div class="card-title" style="margin-bottom:6px;color:var(--amber);">Yesterday's top 3 actions</div>
+          <div id="brief-yesterday-actions" style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:10px;white-space:pre-wrap;"></div>
+          <div class="input-row" style="margin-bottom:0;">
+            <label class="input-label">What got done? (optional — included in today's brief)</label>
+            <textarea id="brief-yesterday-done" rows="2" placeholder="e.g. Sent Microsoft referral DM, scored Roku role - 72%"></textarea>
+          </div>
+        </div>
+      </div>
+
       <div class="input-row">
         <label class="input-label">Any extra context for today? (optional)</label>
-        <textarea id="brief-followups" rows="2" placeholder="e.g. Following up with Acme Corp contact - no reply since Tuesday. Interview with TechCo at 3pm."></textarea>
+        <textarea id="brief-followups" rows="2" placeholder="e.g. Following up with Microsoft contact - no reply since Tuesday. Interview with Tenstorrent at 3pm."></textarea>
       </div>
 
       <div class="btn-row">
@@ -736,11 +785,12 @@ select { appearance: none; cursor: pointer; }
         <div>
           <div class="input-row">
             <label class="input-label">Company & role title</label>
-            <input type="text" id="score-company" placeholder="e.g. Acme Corp - Director of Product">
+            <input type="text" id="score-company" placeholder="e.g. Nothing.tech - Director BD">
           </div>
           <div class="input-row">
             <label class="input-label">Job description</label>
-            <textarea id="score-jd" rows="8" placeholder="Paste the full JD here..."></textarea>
+            <textarea id="score-jd" rows="8" placeholder="Paste the full JD here..." oninput="updateJdStats('score-jd','score-jd-stats')"></textarea>
+            <div id="score-jd-stats" class="jd-stats"></div>
           </div>
           <div class="btn-row">
             <button class="btn btn-primary" onclick="runScore()">Score this role →</button>
@@ -753,31 +803,31 @@ select { appearance: none; cursor: pointer; }
             <div class="card-title" style="margin-bottom:14px;">Fit analysis</div>
             <div class="score-section">
               <div class="score-row">
-                <span class="score-label">Role & function match</span>
+                <span class="score-label">Ecosystem / partner motion</span>
                 <span class="score-weight">25%</span>
                 <div class="score-track"><div class="score-fill" id="sf1" style="width:0%"></div></div>
                 <span class="score-pct" id="sp1">-</span>
               </div>
               <div class="score-row">
-                <span class="score-label">Builder / problem-solver signal</span>
+                <span class="score-label">0-to-1 builder requirement</span>
                 <span class="score-weight">25%</span>
                 <div class="score-track"><div class="score-fill" id="sf2" style="width:0%"></div></div>
                 <span class="score-pct" id="sp2">-</span>
               </div>
               <div class="score-row">
-                <span class="score-label">Technical depth required</span>
+                <span class="score-label">Technical BD depth</span>
                 <span class="score-weight">20%</span>
                 <div class="score-track"><div class="score-fill" id="sf3" style="width:0%"></div></div>
                 <span class="score-pct" id="sp3">-</span>
               </div>
               <div class="score-row">
-                <span class="score-label">Industry / domain fit</span>
+                <span class="score-label">AI-native / Edge AI angle</span>
                 <span class="score-weight">20%</span>
                 <div class="score-track"><div class="score-fill" id="sf4" style="width:0%"></div></div>
                 <span class="score-pct" id="sp4">-</span>
               </div>
               <div class="score-row">
-                <span class="score-label">Seniority & scope match</span>
+                <span class="score-label">Seniority / scope match</span>
                 <span class="score-weight">10%</span>
                 <div class="score-track"><div class="score-fill" id="sf5" style="width:0%"></div></div>
                 <span class="score-pct" id="sp5">-</span>
@@ -826,11 +876,12 @@ select { appearance: none; cursor: pointer; }
 
       <div class="input-row">
         <label class="input-label">Company & role</label>
-        <input type="text" id="apply-role" placeholder="e.g. Acme Corp - Director of Product">
+        <input type="text" id="apply-role" placeholder="e.g. Nothing.tech - Director BD">
       </div>
       <div class="input-row">
         <label class="input-label">Job description</label>
-        <textarea id="apply-jd" rows="6" placeholder="Paste full JD..."></textarea>
+        <textarea id="apply-jd" rows="6" placeholder="Paste full JD..." oninput="updateJdStats('apply-jd','apply-jd-stats')"></textarea>
+        <div id="apply-jd-stats" class="jd-stats"></div>
       </div>
       <div class="two-col">
         <div class="input-row">
@@ -838,16 +889,19 @@ select { appearance: none; cursor: pointer; }
           <select id="apply-contact">
             <option value="none">No contact</option>
             <option value="weak">Weak connection (2nd degree)</option>
+            <option value="weak1">Weak connection (1st degree)</option>
             <option value="strong">Strong contact (1st degree)</option>
           </select>
         </div>
         <div class="input-row">
           <label class="input-label">Role type (for bullet selection)</label>
           <select id="apply-type">
-            <option value="enterprise">Enterprise / large company</option>
-            <option value="startup">Startup / 0-to-1 build</option>
-            <option value="technical">Technical / product-depth role</option>
-            <option value="general">General / all bullets</option>
+            <option value="hardware">Hardware / consumer device</option>
+            <option value="enterprise">Enterprise platform / hyperscaler</option>
+            <option value="startup">AI startup / 0-to-1 GTM</option>
+            <option value="supply">Supply / publisher / SSP</option>
+            <option value="alliances">Strategic / technology alliances</option>
+            <option value="privacy">Privacy-first / consumer tech</option>
           </select>
         </div>
       </div>
@@ -859,6 +913,10 @@ select { appearance: none; cursor: pointer; }
       <div style="margin-top:16px;">
         <div class="prompt-block" id="apply-prompt-out"><span class="output-placeholder">Your tailored application prompt will appear here...</span>
 <button class="prompt-copy-btn" onclick="copyPrompt('apply-prompt-out')">copy</button></div>
+      </div>
+
+      <div id="apply-mark-sent-wrap" style="display:none;margin-top:10px;">
+        <button class="btn" style="font-family:var(--mono);font-size:11px;border-color:var(--accent);color:var(--accent);" onclick="markApplicationSent()">✓ Mark as sent — update pipeline</button>
       </div>
     </div>
 
@@ -874,7 +932,7 @@ select { appearance: none; cursor: pointer; }
         <div>
           <div class="input-row">
             <label class="input-label">Target company & role</label>
-            <input type="text" id="ref-role" placeholder="e.g. Acme Corp - Director of Product">
+            <input type="text" id="ref-role" placeholder="e.g. Nothing.tech - Director BD">
           </div>
           <div class="input-row">
             <label class="input-label">What do you know about the team?</label>
@@ -887,23 +945,23 @@ select { appearance: none; cursor: pointer; }
 
         <div>
           <div class="card">
-            <div class="card-title" style="margin-bottom:10px;">Referral strategy - how it works</div>
+            <div class="card-title" style="margin-bottom:10px;">Your network angles - pre-mapped</div>
             <ul class="step-list">
               <li class="step-item">
-                <div class="step-num" style="background:rgba(184,224,74,0.12);color:var(--accent);border-color:rgba(184,224,74,0.2);">1</div>
-                <div><div class="step-title">Find the warm path first</div><div class="step-desc">Before applying, identify who in your network works at or has worked at the target company. A warm intro 5× your callback rate.</div></div>
+                <div class="step-num" style="background:rgba(184,224,74,0.12);color:var(--accent);border-color:rgba(184,224,74,0.2);">NT</div>
+                <div><div class="step-title">Acme Corp</div><div class="step-desc">Relevant industry contacts + ex-partners → device ecosystem. Lead with specific POV.</div></div>
               </li>
               <li class="step-item">
-                <div class="step-num" style="background:rgba(74,168,224,0.12);color:var(--blue);border-color:rgba(74,168,224,0.2);">2</div>
-                <div><div class="step-title">Lead with value, not "I'm applying"</div><div class="step-desc">DMs that ask for favors get ignored. Share a relevant insight, mention shared context, then ask for a 15-min call.</div></div>
+                <div class="step-num" style="background:rgba(74,168,224,0.12);color:var(--blue);border-color:rgba(74,168,224,0.2);">MS</div>
+                <div><div class="step-title">Microsoft</div><div class="step-desc">Major Partner/Major Partner ISV partners who work with Microsoft ecosystem. MCP integration angle is current.</div></div>
               </li>
               <li class="step-item">
-                <div class="step-num" style="background:rgba(224,168,74,0.12);color:var(--amber);border-color:rgba(224,168,74,0.2);">3</div>
-                <div><div class="step-title">Apply + outreach in parallel</div><div class="step-desc">Don't wait for a reply before applying. Do both at once. The referral increases visibility of your existing application.</div></div>
+                <div class="step-num" style="background:rgba(224,168,74,0.12);color:var(--amber);border-color:rgba(224,168,74,0.2);">EM</div>
+                <div><div class="step-title">Emissary</div><div class="step-desc">AI founder networks, Tech Community hackathon alumni, Industry Community community.</div></div>
               </li>
               <li class="step-item">
-                <div class="step-num" style="background:rgba(74,224,184,0.12);color:var(--teal);border-color:rgba(74,224,184,0.2);">4</div>
-                <div><div class="step-title">Follow up once at day 5</div><div class="step-desc">One short follow-up if no reply. Then move on. Track in your outreach table — never chase more than twice.</div></div>
+                <div class="step-num" style="background:rgba(74,224,184,0.12);color:var(--teal);border-color:rgba(74,224,184,0.2);">TU</div>
+                <div><div class="step-title">TechCo</div><div class="step-desc">Founders you advised → clients or investors.</div></div>
               </li>
             </ul>
           </div>
@@ -928,7 +986,7 @@ select { appearance: none; cursor: pointer; }
         <div>
           <div class="input-row">
             <label class="input-label">Company, role, and round</label>
-            <input type="text" id="prep-role" placeholder="e.g. Acme Corp - Director of Product - HM round">
+            <input type="text" id="prep-role" placeholder="e.g. Nothing.tech - Director BD - HM round">
           </div>
           <div class="input-row">
             <label class="input-label">Interviewer (name + title if known)</label>
@@ -956,13 +1014,13 @@ select { appearance: none; cursor: pointer; }
 
         <div>
           <div class="card">
-            <div class="card-title" style="margin-bottom:10px;">Universal question categories to expect</div>
+            <div class="card-title" style="margin-bottom:10px;">BD question categories to expect</div>
             <ul class="step-list">
-              <li class="step-item"><div class="step-num" style="color:var(--accent);background:var(--accent-dim2);border-color:rgba(184,224,74,0.15);">1</div><div><div class="step-title">Impact & results</div><div class="step-desc">Walk me through your biggest win. What did you build, close, or ship — and what was the outcome?</div></div></li>
-              <li class="step-item"><div class="step-num">2</div><div><div class="step-title">Cross-functional leadership</div><div class="step-desc">How do you align stakeholders who do not report to you? Describe a specific example.</div></div></li>
-              <li class="step-item"><div class="step-num">3</div><div><div class="step-title">Handling ambiguity</div><div class="step-desc">Tell me about a situation where you had to make a decision with incomplete information.</div></div></li>
-              <li class="step-item"><div class="step-num">4</div><div><div class="step-title">Metrics & ownership</div><div class="step-desc">What metrics did you own? How did you track and report them to leadership?</div></div></li>
-              <li class="step-item"><div class="step-num">5</div><div><div class="step-title">Failure & growth</div><div class="step-desc">Tell me about a time something did not work. What did you do differently as a result?</div></div></li>
+              <li class="step-item"><div class="step-num" style="color:var(--accent);background:var(--accent-dim2);border-color:rgba(184,224,74,0.15);">1</div><div><div class="step-title">Partner motion design</div><div class="step-desc">How do you build the tier structure, intake criteria, and co-sell playbook?</div></div></li>
+              <li class="step-item"><div class="step-num">2</div><div><div class="step-title">Deal structure & negotiation</div><div class="step-desc">Complex deal walk-through. Channel conflict resolution.</div></div></li>
+              <li class="step-item"><div class="step-num">3</div><div><div class="step-title">Ecosystem GTM / co-sell</div><div class="step-desc">How do you make partners actually sell vs just signing?</div></div></li>
+              <li class="step-item"><div class="step-num">4</div><div><div class="step-title">Pipeline & metrics</div><div class="step-desc">Partner-sourced vs partner-influenced. What do you own and how do you report it?</div></div></li>
+              <li class="step-item"><div class="step-num">5</div><div><div class="step-title">Stakeholder alignment</div><div class="step-desc">How do you push an unpopular program internally?</div></div></li>
             </ul>
           </div>
         </div>
@@ -983,7 +1041,7 @@ select { appearance: none; cursor: pointer; }
       </div>
       <div class="input-row">
         <label class="input-label">Role and focus</label>
-        <input type="text" id="mock-role" placeholder="e.g. Acme Corp - Director of Product - hardest questions">
+        <input type="text" id="mock-role" placeholder="e.g. Nothing.tech Director BD - hardest questions">
       </div>
       <div class="input-row">
         <label class="input-label">Mode</label>
@@ -1015,7 +1073,7 @@ select { appearance: none; cursor: pointer; }
         <div>
           <div class="input-row">
             <label class="input-label">Company, role, interviewer</label>
-            <input type="text" id="debrief-info" placeholder="e.g. Acme Corp - Director of Product - Sarah Chen, VP Engineering">
+            <input type="text" id="debrief-info" placeholder="e.g. Nothing.tech - Director BD - Sarah Chen, VP Growth">
           </div>
           <div class="input-row">
             <label class="input-label">Questions they asked (in order)</label>
@@ -1023,7 +1081,7 @@ select { appearance: none; cursor: pointer; }
           </div>
           <div class="input-row">
             <label class="input-label">Key moments & observations</label>
-            <textarea id="debrief-notes" rows="3" placeholder="e.g. Energy shifted when I mentioned my metrics from [Company]... they seemed most interested in the [specific topic]..."></textarea>
+            <textarea id="debrief-notes" rows="3" placeholder="Energy shifted when I mentioned Ecosystem Partners... they pushed back on the corp gifting question..."></textarea>
           </div>
           <div class="input-row">
             <label class="input-label">Gut read</label>
@@ -1077,7 +1135,7 @@ select { appearance: none; cursor: pointer; }
         <div>
           <div class="input-row">
             <label class="input-label">Company & role</label>
-            <input type="text" id="neg-role" placeholder="e.g. Acme Corp - Director of Product">
+            <input type="text" id="neg-role" placeholder="e.g. Nothing.tech - Director BD">
           </div>
           <div class="two-col" style="gap:10px;">
             <div class="input-row">
@@ -1118,27 +1176,30 @@ select { appearance: none; cursor: pointer; }
 
         <div>
           <div class="card card-accent">
-            <div class="card-title" style="margin-bottom:10px;">Market benchmarks - how to research them</div>
+            <div class="card-title" style="margin-bottom:10px;">Market benchmarks - Director BD at AI companies</div>
             <div style="font-size:12px;color:var(--text2);line-height:1.8;">
-              <div style="padding:4px 0;border-bottom:1px solid var(--border);">
-                The /negotiate workflow searches current comp benchmarks for your role and market when you paste the prompt into Claude. You will get live data from Levels.fyi, LinkedIn, Glassdoor, and compensation surveys.
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
+                <span>Base range</span><span style="font-family:var(--mono);color:var(--text);">$180K – $240K</span>
               </div>
-              <div style="padding:8px 0;font-size:11px;color:var(--text3);">
-                To anchor your benchmarks before negotiating: search "[Role Title] salary [City] [Year]" on LinkedIn, Glassdoor, and Levels.fyi. Look at 10th/50th/90th percentile, not just the median.
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
+                <span>Bonus typical</span><span style="font-family:var(--mono);color:var(--text);">15 – 25%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">
+                <span>Equity (AI startup)</span><span style="font-family:var(--mono);color:var(--text);">0.1 – 0.5%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:4px 0;">
+                <span>Total comp range</span><span style="font-family:var(--mono);color:var(--accent);">$220K – $320K+</span>
               </div>
             </div>
           </div>
           <div class="card" style="margin-top:10px;">
-            <div class="card-title" style="margin-bottom:8px;">Your leverage points (customize these)</div>
-            <div style="font-size:12px;color:var(--text2);line-height:1.8;padding:0 0 4px;">
-              The /negotiate prompt asks Claude to surface your specific leverage given the offer. Common leverage points:
-            </div>
+            <div class="card-title" style="margin-bottom:8px;">Your leverage</div>
             <ul style="font-size:12px;color:var(--text2);line-height:1.8;padding-left:16px;">
-              <li>Competing offers or active processes at other companies</li>
-              <li>Rare skills or credentials listed in the JD that you have</li>
-              <li>Specific metrics (revenue, growth, team size) that match their need exactly</li>
-              <li>Current employment status - consulting/advising = not desperate</li>
-              <li>Long ramp timeline at your current role makes switching costly</li>
+              <li>$1M→$100M ecosystem revenue - rare proof of build + scale</li>
+              <li>$9M at 120% as first BD hire - 0-to-1 credibility</li>
+              <li>Top Performer Award - external validation</li>
+              <li>Independent advisory active - consulting</li>
+              <li>BTech + Bell Labs - technical depth most BD lacks</li>
             </ul>
           </div>
         </div>
@@ -1174,12 +1235,12 @@ select { appearance: none; cursor: pointer; }
         </div>
         <div>
           <div class="card">
-            <div class="card-title" style="margin-bottom:10px;">Common patterns to watch for</div>
+            <div class="card-title" style="margin-bottom:10px;">Pre-seeded patterns to watch</div>
             <ul class="step-list">
-              <li class="step-item"><div class="step-num" style="color:var(--amber);border-color:rgba(224,168,74,0.3);">!</div><div><div class="step-title">Impact quantification under pressure</div><div class="step-desc">When nervous, candidates drop metrics. End every story with a number: "$X revenue / Y% improvement / Z users."</div></div></li>
-              <li class="step-item"><div class="step-num" style="color:var(--accent);border-color:rgba(184,224,74,0.3);">✓</div><div><div class="step-title">Your anchor stories</div><div class="step-desc">After 3+ debriefs, use /pattern to find which stories you tell best. Those are your anchors - use them consistently.</div></div></li>
-              <li class="step-item"><div class="step-num" style="color:var(--red);border-color:rgba(224,90,74,0.3);">↓</div><div><div class="step-title">Stories you avoid answering</div><div class="step-desc">Topics where you give vague answers are topics to drill. Log them in /debrief and run /mock on them specifically.</div></div></li>
-              <li class="step-item"><div class="step-num" style="color:var(--blue);border-color:rgba(74,168,224,0.3);">↑</div><div><div class="step-title">Underused strong stories</div><div class="step-desc">You likely have high-impact work you undersell. After 5 debriefs, /pattern will flag which stories you forget to use.</div></div></li>
+              <li class="step-item"><div class="step-num" style="color:var(--amber);border-color:rgba(224,168,74,0.3);">!</div><div><div class="step-title">Impact quantification under pressure</div><div class="step-desc">End every story with a metric. "$X% of pipeline / cut cycle time by Y%."</div></div></li>
+              <li class="step-item"><div class="step-num" style="color:var(--accent);border-color:rgba(184,224,74,0.3);">✓</div><div><div class="step-title">0-to-1 program design stories</div><div class="step-desc">Previous roles both play naturally. Keep using as anchors.</div></div></li>
+              <li class="step-item"><div class="step-num" style="color:var(--red);border-color:rgba(224,90,74,0.3);">↓</div><div><div class="step-title">Channel conflict / co-sell dynamics</div><div class="step-desc">No prepped story yet. Build from indirect vs direct channel tension.</div></div></li>
+              <li class="step-item"><div class="step-num" style="color:var(--blue);border-color:rgba(74,168,224,0.3);">↑</div><div><div class="step-title">Underused: Channel Partners story</div><div class="step-desc">Major hardware manufacturers. Strong analog for Nothing.tech - surface it more.</div></div></li>
             </ul>
           </div>
 
@@ -1265,14 +1326,15 @@ select { appearance: none; cursor: pointer; }
       <div id="rvp1">
         <div class="card card-accent">
           <div class="card-title" style="margin-bottom:12px;">Enter role - or quick-load from your active list</div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:14px;">Enter your target company and role below, or paste the full JD for best results.</div>
+          <div id="rv-pipeline-ql" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div>
           <div class="two-col">
-            <div class="input-row"><label class="input-label">Company</label><input type="text" id="rv-company" placeholder="e.g. Acme Corp" oninput="rvLiveScore()"></div>
+            <div class="input-row"><label class="input-label">Company</label><input type="text" id="rv-company" placeholder="e.g. Tenstorrent" oninput="rvLiveScore()"></div>
             <div class="input-row"><label class="input-label">Role title</label><input type="text" id="rv-role" placeholder="e.g. Head of ISV Partnerships" oninput="rvLiveScore()"></div>
           </div>
           <div class="input-row">
             <label class="input-label">Job description - paste full text for best results</label>
-            <textarea id="rv-jd" rows="6" placeholder="Paste the full JD here. The system analyzes it to pick the right template and bullets..." oninput="rvLiveScore()"></textarea>
+            <textarea id="rv-jd" rows="6" placeholder="Paste the full JD here. The system analyzes it to pick the right template and bullets..." oninput="rvLiveScore(); updateJdStats('rv-jd','rv-jd-stats')"></textarea>
+            <div id="rv-jd-stats" class="jd-stats"></div>
           </div>
           <!-- LIVE SCORE -->
           <div id="rv-score-wrap" style="display:none;">
@@ -1283,13 +1345,35 @@ select { appearance: none; cursor: pointer; }
               <span id="rv-sc-verdict"></span>
               <span style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-left:4px;" id="rv-sc-suggest"></span>
             </div>
-            <div class="score-row"><span class="score-label">Role & function match</span><span class="score-weight">25%</span><div class="score-track"><div class="score-fill" id="rvf1" style="width:0"></div></div><span class="score-pct" id="rvp1s">-</span></div>
-            <div class="score-row"><span class="score-label">Builder / problem-solver signal</span><span class="score-weight">25%</span><div class="score-track"><div class="score-fill" id="rvf2" style="width:0"></div></div><span class="score-pct" id="rvp2s">-</span></div>
-            <div class="score-row"><span class="score-label">Technical depth required</span><span class="score-weight">20%</span><div class="score-track"><div class="score-fill" id="rvf3" style="width:0"></div></div><span class="score-pct" id="rvp3s">-</span></div>
-            <div class="score-row"><span class="score-label">Industry / domain fit</span><span class="score-weight">20%</span><div class="score-track"><div class="score-fill" id="rvf4" style="width:0"></div></div><span class="score-pct" id="rvp4s">-</span></div>
-            <div class="score-row"><span class="score-label">Seniority & scope match</span><span class="score-weight">10%</span><div class="score-track"><div class="score-fill" id="rvf5" style="width:0"></div></div><span class="score-pct" id="rvp5s">-</span></div>
+            <div class="score-row"><span class="score-label">Ecosystem / partner motion</span><span class="score-weight">25%</span><div class="score-track"><div class="score-fill" id="rvf1" style="width:0"></div></div><span class="score-pct" id="rvp1s">-</span></div>
+            <div class="score-row"><span class="score-label">0-to-1 builder signal</span><span class="score-weight">25%</span><div class="score-track"><div class="score-fill" id="rvf2" style="width:0"></div></div><span class="score-pct" id="rvp2s">-</span></div>
+            <div class="score-row"><span class="score-label">Technical BD depth</span><span class="score-weight">20%</span><div class="score-track"><div class="score-fill" id="rvf3" style="width:0"></div></div><span class="score-pct" id="rvp3s">-</span></div>
+            <div class="score-row"><span class="score-label">AI-native / Edge AI</span><span class="score-weight">20%</span><div class="score-track"><div class="score-fill" id="rvf4" style="width:0"></div></div><span class="score-pct" id="rvp4s">-</span></div>
+            <div class="score-row"><span class="score-label">Seniority / scope</span><span class="score-weight">10%</span><div class="score-track"><div class="score-fill" id="rvf5" style="width:0"></div></div><span class="score-pct" id="rvp5s">-</span></div>
+            <div id="rv-sc-penalties" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);"></div>
           </div>
         </div>
+        <!-- COMPANY RESEARCH -->
+        <div class="card" style="margin-top:14px;border-left:2px solid var(--accent2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:0;" onclick="rvToggleResearch()">
+            <div>
+              <div class="card-title" style="margin-bottom:2px;">Company research <span style="font-family:var(--mono);font-size:9px;color:var(--text3);font-weight:400;margin-left:6px;">optional but recommended</span></div>
+              <div style="font-size:11px;color:var(--text3);">Generate a research prompt → paste back Claude's summary → bullets align to what the company cares about now</div>
+            </div>
+            <span id="rv-research-chevron" style="font-family:var(--mono);font-size:14px;color:var(--text3);margin-left:12px;">›</span>
+          </div>
+          <div id="rv-research-body" style="display:none;margin-top:14px;">
+            <button class="btn" style="font-family:var(--mono);font-size:11px;border-color:var(--accent2);color:var(--accent2);margin-bottom:10px;" onclick="rvGenResearch()">Generate research prompt →</button>
+            <div id="rv-research-prompt-wrap" style="display:none;">
+              <div class="prompt-block" id="rv-research-prompt" style="margin-bottom:10px;max-height:140px;"><span class="output-placeholder">Research prompt will appear here — copy and paste into Claude...</span><button class="prompt-copy-btn" onclick="copyPrompt('rv-research-prompt')">copy</button></div>
+              <div class="input-row" style="margin-bottom:0;">
+                <label class="input-label">Paste Claude's research summary back here</label>
+                <textarea id="rv-research-input" rows="4" placeholder="e.g. Tenstorrent raised $693M Series C in Feb 2025, focused on open-source AI stack and ISV developer ecosystem. CEO Jim Keller pushing hardware-agnostic GTM. Key hiring signal: scaling partner team to drive SDK adoption across AI inference workloads..." oninput="RV.research=this.value.trim()"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="btn-row"><button class="btn btn-primary" onclick="rvGoStep(2)">Continue → choose template</button></div>
       </div>
 
@@ -1300,26 +1384,28 @@ select { appearance: none; cursor: pointer; }
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
             <div class="rv-tmpl-card" id="rvtc-enterprise" onclick="rvSelTmpl('enterprise')">
               <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;">Enterprise</div>
-              <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;">Competency-forward layout, structured experience sections, C-suite and delivery language.</div>
-              <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg4);color:var(--text3);">Large co / Fortune 500 / public company</span>
+              <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;">4-column competency grid, C-suite and delivery ecosystem language.</div>
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg4);color:var(--text3);">Apple · Microsoft · Salesforce</span>
             </div>
             <div class="rv-tmpl-card" id="rvtc-edgeai" onclick="rvSelTmpl('edgeai')">
-              <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;">Technical / Platform</div>
-              <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;">Builder-operator summary, technical depth emphasized, product and engineering language.</div>
-              <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg4);color:var(--text3);">Infra / platform / technical product roles</span>
+              <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;">Edge AI / Platform</div>
+              <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;">Builder-Seller summary, 3-group competency table, SoC and on-device AI language.</div>
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg4);color:var(--text3);">Tenstorrent · Qualcomm · AMD</span>
             </div>
             <div class="rv-tmpl-card" id="rvtc-startup" onclick="rvSelTmpl('startup')">
               <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;">Startup / 0-to-1</div>
-              <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;">First-hire or founding-team credentials up front. Velocity and resourcefulness emphasized.</div>
-              <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg4);color:var(--text3);">Seed / Series A-B / founder-led companies</span>
+              <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;">First-hire credentials, Previous two roles as primary proof points.</div>
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:10px;background:var(--bg4);color:var(--text3);">Emissary · MAVI · Typeface</span>
             </div>
           </div>
           <div class="card-title" style="margin-bottom:8px;">Role type - controls bullet selection</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-            <div class="rv-pill" id="rvrt-enterprise" onclick="rvSelRT('enterprise')">Enterprise</div>
-            <div class="rv-pill" id="rvrt-edgeai"     onclick="rvSelRT('edgeai')">Technical / platform</div>
+            <div class="rv-pill" id="rvrt-enterprise" onclick="rvSelRT('enterprise')">Enterprise alliances</div>
+            <div class="rv-pill" id="rvrt-edgeai"     onclick="rvSelRT('edgeai')">Edge AI / hardware</div>
+            <div class="rv-pill" id="rvrt-hardware"   onclick="rvSelRT('hardware')">Hardware / OEM</div>
             <div class="rv-pill" id="rvrt-startup"    onclick="rvSelRT('startup')">Startup / 0-to-1</div>
-            <div class="rv-pill" id="rvrt-general"    onclick="rvSelRT('general')">General</div>
+            <div class="rv-pill" id="rvrt-alliances"  onclick="rvSelRT('alliances')">Strategic alliances</div>
+            <div class="rv-pill" id="rvrt-supply"     onclick="rvSelRT('supply')">Supply / publisher</div>
           </div>
           <div style="font-family:var(--mono);font-size:10px;color:var(--text3);">Auto-detected from JD. Override here if needed.</div>
         </div>
@@ -1337,7 +1423,7 @@ select { appearance: none; cursor: pointer; }
           <div id="rv-bullet-area"></div>
         </div>
         <div class="btn-row">
-          <button class="btn btn-primary" onclick="rvGoStep(4)">Continue → get rewrite prompt</button>
+          <button class="btn btn-primary" onclick="rvGoStep(4)">Continue → rewrite with Claude</button>
           <button class="btn" onclick="rvGoStep(2)">← Back</button>
         </div>
       </div>
@@ -1345,19 +1431,27 @@ select { appearance: none; cursor: pointer; }
       <!-- STEP 4 - CLAUDE -->
       <div id="rvp4" style="display:none;">
         <div class="card card-accent">
-          <div class="card-title" style="margin-bottom:4px;">Rewrite your bullets for this role</div>
-          <div class="card-body" style="margin-bottom:14px;">Copy the prompt below and paste it into your Claude Project. Claude will rewrite each bullet to match this role's language while preserving every metric exactly.</div>
+          <div class="card-title" style="margin-bottom:4px;">Claude rewrites your bullets for this role</div>
+          <div class="card-body" style="margin-bottom:14px;">Claude reads your selected bullets + the JD and rewrites each one to match this role's language - keeping every metric exactly.</div>
           <div class="input-row">
             <label class="input-label">Extra context for Claude (optional)</label>
-            <input type="text" id="rv-ctx" placeholder="e.g. 'Emphasize the 0-to-1 angle' or 'They care most about ecosystem scale'" oninput="rvBuildManualPrompt()">
+            <input type="text" id="rv-ctx" placeholder="e.g. 'Emphasize on-device AI angle' or 'They care most about ISV ecosystem scale'">
           </div>
           <div class="btn-row">
-            <button class="btn btn-primary" id="rv-claude-btn" onclick="rvRunClaude()">Copy rewrite prompt →</button>
+            <button class="btn btn-primary" id="rv-claude-btn" onclick="rvRunClaude()">Rewrite with Claude →</button>
             <button class="btn" onclick="rvGoStep(5)">Skip - use bullets as-is</button>
+          </div>
+          <div id="rv-claude-wrap" style="display:none;margin-top:16px;">
+            <div class="input-label" style="margin-bottom:6px;">Claude output</div>
+            <div id="rv-claude-out" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--text2);white-space:pre-wrap;min-height:80px;max-height:280px;overflow-y:auto;"></div>
+            <div class="btn-row" id="rv-claude-accept" style="display:none;">
+              <button class="btn btn-primary" onclick="rvAcceptRewrites()">Accept rewrites → continue</button>
+              <button class="btn" onclick="rvRejectRewrites()">Discard - keep originals</button>
+            </div>
           </div>
         </div>
         <div class="card" style="margin-top:12px;">
-          <div class="card-title" style="margin-bottom:8px;">Rewrite prompt - paste into Claude Projects</div>
+          <div class="card-title" style="margin-bottom:8px;">Or copy this prompt and paste into Claude manually</div>
           <div class="prompt-block" id="rv-manual-prompt"><span class="output-placeholder">Complete step 1 first.</span><button class="prompt-copy-btn" onclick="copyPrompt('rv-manual-prompt')">copy</button></div>
         </div>
         <div class="btn-row"><button class="btn" onclick="rvGoStep(3)">← Back</button></div>
@@ -1430,7 +1524,7 @@ select { appearance: none; cursor: pointer; }
             <div class="card-title" style="margin-bottom:10px;">Import from Chrome extension</div>
             <div class="card-body" style="margin-bottom:12px;">Paste the JSON exported from the Chrome extension's Nudges tab → Export scored roles. Companies not already in your tracker will be added.</div>
             <div class="input-row">
-              <textarea id="sync-import-json" rows="6" placeholder='{"contacts":[{"company":"Target Company","role":"Your Target Role","score":88,...}]}'></textarea>
+              <textarea id="sync-import-json" rows="6" placeholder='{"contacts":[{"company":"Tenstorrent","role":"Head of ISV Partnerships","score":93,...}]}'></textarea>
             </div>
             <div class="btn-row">
               <button class="btn btn-primary" onclick="importFromExtension()">Import roles from extension</button>
@@ -1497,8 +1591,11 @@ At the start of any session where I ask about my job search, pipeline, or outrea
           <div class="card" style="margin-top:12px;">
             <div class="card-title" style="margin-bottom:8px;">Your network assets</div>
             <div style="font-size:12px;color:var(--text2);line-height:1.8;">
-              Add companies to your outreach tracker to map your network here. The network map shows warm paths based on your tracker data and the connection angles you fill in per company.
-              <div style="margin-top:10px;font-size:11px;color:var(--text3);">Tip: For each company you add, fill in the "Specific POV / value add" field with why your background is relevant. This is what the referral strategy prompt uses.</div>
+              <div style="margin-bottom:6px;"><span style="color:var(--accent);font-family:var(--mono);font-size:10px;">Ecosystem Partners</span> - Relevant major tech companies</div>
+              <div style="margin-bottom:6px;"><span style="color:var(--blue);font-family:var(--mono);font-size:10px;">Channel Partners</span> - Relevant hardware OEMs</div>
+              <div style="margin-bottom:6px;"><span style="color:var(--amber);font-family:var(--mono);font-size:10px;">Industry Network</span> - Relevant ecosystem contacts</div>
+              <div style="margin-bottom:6px;"><span style="color:var(--teal);font-family:var(--mono);font-size:10px;">Community</span> - Tech Community alumni, Industry Community, Hatched</div>
+              <div><span style="color:var(--text3);font-family:var(--mono);font-size:10px;">Advisory Clients</span> - Relevant startups</div>
             </div>
           </div>
         </div>
@@ -1583,7 +1680,7 @@ At the start of any session where I ask about my job search, pipeline, or outrea
           </div>
           <div class="input-row">
             <label class="input-label">Companies to always include regardless of score</label>
-            <input type="text" id="digest-always-include" placeholder="e.g. Anthropic, Stripe, your top 3 target companies">
+            <input type="text" id="digest-always-include" placeholder="e.g. Tenstorrent, Nothing.tech, Microsoft">
           </div>
           <div class="input-row">
             <label class="input-label">Job boards to scan</label>
@@ -1630,29 +1727,29 @@ At the start of any session where I ask about my job search, pipeline, or outrea
             <div class="card-title" style="margin-bottom:12px;">Content pillars</div>
             <div id="post-pillars" style="display:grid;gap:8px;">
 
+              <div class="post-pillar" id="pp-stack" onclick="selectPillar('stack')" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .12s;">
+                <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">AI Partnership Stack</div>
+                <div style="font-size:11px;color:var(--text2);">The 6-layer framework - Intelligence → Capability → Developer → Vertical → Motion → Distribution</div>
+              </div>
+
               <div class="post-pillar" id="pp-lesson" onclick="selectPillar('lesson')" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .12s;">
                 <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">Hard-won lesson</div>
-                <div style="font-size:11px;color:var(--text2);">Something specific you learned the hard way in your field. One concrete example, one takeaway.</div>
+                <div style="font-size:11px;color:var(--text2);">Something specific you learned building ISV ecosystems, fintech BD, or OEM partnerships</div>
               </div>
 
               <div class="post-pillar" id="pp-observation" onclick="selectPillar('observation')" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .12s;">
-                <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">Industry observation</div>
-                <div style="font-size:11px;color:var(--text2);">What you're seeing change in your industry right now - a trend, a shift, what it means for practitioners</div>
+                <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">AI ecosystem observation</div>
+                <div style="font-size:11px;color:var(--text2);">What you're seeing in AI partnerships right now - MCP, agent-to-agent, co-sell motions, what's changing</div>
               </div>
 
               <div class="post-pillar" id="pp-myth" onclick="selectPillar('myth')" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .12s;">
                 <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">Myth vs reality</div>
-                <div style="font-size:11px;color:var(--text2);">A common misconception in your field that you have seen disproven. What people get wrong and why.</div>
+                <div style="font-size:11px;color:var(--text2);">Common misconception about BD/partnerships that you've seen disproven in the field</div>
               </div>
 
               <div class="post-pillar" id="pp-build" onclick="selectPillar('build')" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .12s;">
                 <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">Builder's take</div>
-                <div style="font-size:11px;color:var(--text2);">What a specific thing actually looks like in practice - the process, the first 90 days, the decisions no one talks about.</div>
-              </div>
-
-              <div class="post-pillar" id="pp-stack" onclick="selectPillar('stack')" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;cursor:pointer;transition:all .12s;">
-                <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">Your framework or mental model</div>
-                <div style="font-size:11px;color:var(--text2);">A framework you use that others don't. Name it, explain it in 3-5 steps, give a concrete example of it working.</div>
+                <div style="font-size:11px;color:var(--text2);">What 0-to-1 program design actually looks like - the intake, the playbook, the first 90 days</div>
               </div>
 
             </div>
@@ -1669,14 +1766,15 @@ At the start of any session where I ask about my job search, pipeline, or outrea
 
           <div class="card" style="margin-top:12px;" id="post-output-card" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-              <div class="card-title">Post prompt - paste into Claude Projects</div>
+              <div class="card-title">Generated post</div>
               <div style="display:flex;gap:6px;">
-                <button class="btn" style="font-size:10px;font-family:var(--mono);padding:5px 10px;" onclick="generatePost()">Regenerate prompt</button>
+                <button class="btn" style="font-size:10px;font-family:var(--mono);padding:5px 10px;" onclick="regeneratePost()">Regenerate</button>
               </div>
             </div>
             <div id="post-output" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;font-size:13px;color:var(--text2);line-height:1.7;min-height:120px;white-space:pre-wrap;max-height:320px;overflow-y:auto;"></div>
             <div class="btn-row" style="margin-top:10px;">
-              <button class="btn btn-primary" onclick="copyPostOutput()">Copy prompt →</button>
+              <button class="btn btn-primary" onclick="openPostInClaude()">Refine in Claude →</button>
+              <button class="btn" onclick="copyPostOutput()">Copy post</button>
             </div>
             <div id="post-char-count" style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px;"></div>
           </div>
@@ -1777,10 +1875,11 @@ At the start of any session where I ask about my job search, pipeline, or outrea
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-addrole')">✕</button>
     <div class="modal-title">Add role to pipeline</div>
-    <div class="input-row"><label class="input-label">Company</label><input type="text" id="ar-company" placeholder="e.g. Acme Corp"></div>
+    <div class="input-row"><label class="input-label">Company</label><input type="text" id="ar-company" placeholder="e.g. Nothing.tech"></div>
     <div class="input-row"><label class="input-label">Role title</label><input type="text" id="ar-role" placeholder="e.g. Director, Business Development"></div>
     <div class="input-row"><label class="input-label">Stage</label>
       <select id="ar-stage">
+        <option value="To Review">To Review</option>
         <option value="Monitoring">Monitoring</option>
         <option value="Applied">Applied</option>
         <option value="Recruiter screen">Recruiter screen</option>
@@ -1821,7 +1920,7 @@ At the start of any session where I ask about my job search, pipeline, or outrea
     </div>
     <div class="input-row"><label class="input-label">Target role</label><input type="text" id="ac-role" placeholder="e.g. Director, BD"></div>
     <div class="input-row"><label class="input-label">Internal contact</label><input type="text" id="ac-contact" placeholder="e.g. Jane Smith (Product Lead)"></div>
-    <div class="input-row"><label class="input-label">Specific POV / value add</label><input type="text" id="ac-pov" placeholder="e.g. My experience building X maps directly to their Y motion"></div>
+    <div class="input-row"><label class="input-label">Specific POV / value add</label><input type="text" id="ac-pov" placeholder="e.g. Your ecosystem experience maps to their partner motion"></div>
     <div class="input-row"><label class="input-label">Last outreach date</label><input type="text" id="ac-date" placeholder="e.g. Apr 10"></div>
     <div class="btn-row">
       <button class="btn primary" onclick="addContact()">Add company</button>
@@ -1839,33 +1938,57 @@ const STORAGE_KEY = 'jobos_v3';
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const state = JSON.parse(raw);
+      // Migration: ensure every pipeline item has a unique ID (fixes pre-v4.9 float-collision IDs)
+      const seenIds = new Set();
+      let needsSave = false;
+      const migBase = Date.now() * 1000;
+      let migSeq = 0;
+      (state.pipeline || []).forEach(r => {
+        if (!r.id || seenIds.has(r.id)) {
+          r.id = migBase + ++migSeq;
+          needsSave = true;
+        }
+        seenIds.add(r.id);
+      });
+      if (needsSave) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+      }
+      return state;
+    }
   } catch(e) {}
-  window._localStorageWasEmpty = true;
+  window._jobosLocalStorageWasEmpty = true;
   return defaultState();
 }
 
 function defaultState() {
   return {
-    pipeline: [],
+    pipeline: [
+      { id: 1, company: 'Nothing.tech', role: 'Director, Business Development', stage: 'Recruiter screen', health: 'amber', lastAction: 'Apr 1', nextStep: 'Prep for HM round' },
+      { id: 2, company: 'Microsoft', role: 'Sr. Manager, Global Partnerships', stage: 'Applied', health: 'amber', lastAction: 'Mar 25', nextStep: 'Find warm referral' },
+      { id: 3, company: 'Emissary', role: 'Founding GTM Lead', stage: 'Applied', health: 'green', lastAction: 'Apr 3', nextStep: 'Follow up this week' },
+      { id: 4, company: 'Turing.com', role: 'Client Partner, AI Startups', stage: 'Monitoring', health: 'green', lastAction: 'Mar 28', nextStep: 'Check for new postings' }
+    ],
     history: [],
     scores: [],
     debriefs: [],
     activityMap: {},
-    stats: { totalCmds: 0, totalApps: 0, totalInterviews: 0, streak: 0, lastActive: null }
+    stats: { totalCmds: 0, totalApps: 0, totalInterviews: 0, streak: 0, lastActive: null },
+    lastBrief: null
   };
 }
 
 function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); } catch(e) {}
+  // Mirror to extension's chrome.storage.local so state survives browser restarts
+  // that clear localStorage (e.g. "Clear cookies on exit" browser settings).
   try {
     const extId = window.JOBOS_EXT_ID || document.documentElement.dataset.jobosExtId;
     if (extId && typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      chrome.runtime.sendMessage(
-        extId,
-        { action: 'saveStateBackup', state: STATE },
-        () => { if (chrome.runtime.lastError) {} }
-      );
+      chrome.runtime.sendMessage(extId, { action: 'saveStateBackup', state: STATE }, () => {
+        if (chrome.runtime.lastError) { /* extension unreachable - ok, silent fail */ }
+      });
     }
   } catch(e) {}
 }
@@ -1880,8 +2003,10 @@ function nav(id) {
   const navBtn = document.getElementById('nav-' + id);
   if (panel) panel.classList.add('active');
   if (navBtn) navBtn.classList.add('active');
-  if (id === 'brief') loadCalendarForBrief();
+  if (id === 'brief') { loadCalendarForBrief(); loadBriefYesterday(); }
+  if (id === 'inbox') renderInbox();
   if (id === 'pipeline') { renderPipeline(); buildPipelinePrompt(); }
+  if (id === 'resume') renderResumePipelineQL();
   if (id === 'history') renderHistory();
   if (id === 'dashboard') { renderPipelineMini(); renderActivityGrid(); }
   if (id === 'outreach') { renderOutreachTable(); updateOutreachMetrics(); renderVelocityChart(); renderStatusBreakdown(); }
@@ -1924,12 +2049,14 @@ function renderDashboardCalendar() {
 function renderPipeline() {
   const tbody = document.getElementById('pipeline-tbody');
   if (!tbody) return;
-  if (!STATE.pipeline.length) {
+  // "To Review" roles live in the inbox panel, not here
+  const pipelineRoles = STATE.pipeline.filter(r => r.stage !== INBOX_STAGE);
+  if (!pipelineRoles.length) {
     tbody.innerHTML = `<tr><td colspan="9" style="padding:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3);">No roles in pipeline. Click + Add role to get started.</td></tr>`;
     return;
   }
   const oneWeekAgo = Date.now() - 7 * 86400000;
-  const visible = STATE.pipeline
+  const visible = pipelineRoles
     .filter(r => {
       if (!CLOSED_STAGES.includes(r.stage)) return true;
       if (!r.closedAt) return true; // legacy: no closedAt, show it
@@ -1967,7 +2094,7 @@ function renderPipeline() {
       </td>
       <td>
         <select onchange="updatePipelineStage(${r.id},this.value)" style="background:transparent;border:1px solid var(--border2);font-family:var(--mono);font-size:9px;padding:3px 6px;border-radius:4px;cursor:pointer;color:var(--text2);">
-          ${['Monitoring','Applied','Recruiter screen','HM round','Panel','Offer','Withdrawn','Rejected','Closed'].map(s=>`<option value="${s}" ${r.stage===s?'selected':''}>${s}</option>`).join('')}
+          ${['To Review','Monitoring','Applied','Recruiter screen','HM round','Panel','Offer','Withdrawn','Rejected','Closed'].map(s=>`<option value="${s}" ${r.stage===s?'selected':''}>${s}</option>`).join('')}
         </select>
       </td>
       <td><button class="btn" style="font-size:10px;padding:4px 8px;" onclick="removeRole(${r.id})">×</button></td>
@@ -1978,7 +2105,7 @@ function renderPipeline() {
 function renderPipelineMini() {
   const el = document.getElementById('pipeline-mini');
   if (!el) return;
-  el.innerHTML = STATE.pipeline.map(r => {
+  el.innerHTML = STATE.pipeline.filter(r => r.stage !== INBOX_STAGE).map(r => {
     const healthCls = { green:'health-green', amber:'health-amber', red:'health-red' }[r.health] || 'health-amber';
     const companyEl = r.url ? `<a href="${r.url}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">${r.company}</a>` : r.company;
     return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">
@@ -1990,14 +2117,16 @@ function renderPipelineMini() {
       <span style="font-family:var(--mono);font-size:9px;color:var(--text3);white-space:nowrap;">${r.stage}</span>
     </div>`;
   }).join('');
-  document.getElementById('badge-pipeline').textContent = STATE.pipeline.length;
+  const activePipelineCount = STATE.pipeline.filter(r => r.stage !== INBOX_STAGE).length;
+  document.getElementById('badge-pipeline').textContent = activePipelineCount;
+  updateInboxBadge();
 }
 
 function buildPipelinePrompt() {
   const el = document.getElementById('prompt-pipeline');
   if (!el) return;
-  const active = STATE.pipeline.filter(r => !['Withdrawn','Rejected','Closed'].includes(r.stage));
-  const closed = STATE.pipeline.filter(r => ['Withdrawn','Rejected','Closed'].includes(r.stage));
+  const active = STATE.pipeline.filter(r => r.stage !== INBOX_STAGE && !CLOSED_STAGES.includes(r.stage));
+  const closed = STATE.pipeline.filter(r => CLOSED_STAGES.includes(r.stage));
   const pipelineLines = active.map(r =>
     `  ${r.company} - ${r.role} - ${r.stage} [${r.health}] - Last action: ${r.lastAction} - Next: ${r.nextStep}`
   ).join('\n');
@@ -2015,6 +2144,88 @@ Tell me: (1) What is at risk of going cold? (2) What has momentum?
   btn.textContent = 'copy';
   btn.onclick = () => copyPrompt('prompt-pipeline');
   el.appendChild(btn);
+}
+
+// ==================== INBOX ====================
+function updateInboxBadge() {
+  const count = STATE.pipeline.filter(r => r.stage === INBOX_STAGE).length;
+  const badge = document.getElementById('badge-inbox');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderInbox() {
+  const list = document.getElementById('inbox-list');
+  const empty = document.getElementById('inbox-empty');
+  if (!list) return;
+  const roles = STATE.pipeline.filter(r => r.stage === INBOX_STAGE);
+  if (!roles.length) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  list.innerHTML = roles.map(r => {
+    const score = r.scoreFromExt ? `<span style="font-family:var(--mono);font-size:10px;color:var(--accent);background:var(--accent-dim);padding:2px 7px;border-radius:10px;">${r.scoreFromExt}%</span>` : '';
+    const added = r.addedAt ? new Date(r.addedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    const companyLabel = r.url
+      ? `<a href="${r.url}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" title="Open job listing">${r.company} ↗</a>`
+      : r.company;
+    return `<div class="inbox-card">
+      <div class="inbox-card-body">
+        <div class="inbox-card-company">${companyLabel}</div>
+        <div class="inbox-card-role">${r.role || '—'}</div>
+        <div class="inbox-card-Major Partner">
+          ${score}
+          ${added ? `<span style="font-family:var(--mono);font-size:9px;color:var(--text3);">Added ${added}</span>` : ''}
+        </div>
+      </div>
+      <div class="inbox-card-actions">
+        <button class="btn" style="font-size:10px;padding:5px 10px;font-family:var(--mono);" onclick="inboxResume(${r.id})" title="Load into resume builder">Resume</button>
+        <button class="btn btn-primary" style="font-size:10px;padding:5px 10px;font-family:var(--mono);" onclick="inboxApply(${r.id})">Apply →</button>
+        <button class="btn" style="font-size:10px;padding:5px 10px;color:var(--text3);font-family:var(--mono);" onclick="inboxPass(${r.id})" title="Remove from inbox">Pass</button>
+      </div>
+    </div>`;
+  }).join('');
+  updateInboxBadge();
+}
+
+function inboxApply(id) {
+  const r = STATE.pipeline.find(x => x.id === id);
+  if (!r) return;
+  r.stage = 'Applied';
+  r.lastAction = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  saveState();
+  renderInbox();
+  renderPipelineMini();
+  // Navigate to /apply and pre-fill role + JD
+  document.getElementById('apply-role').value = `${r.company} - ${r.role || ''}`.trim().replace(/- $/, '');
+  if (r.jd) document.getElementById('apply-jd').value = r.jd;
+  nav('apply');
+  toast(`${r.company} → /apply`);
+}
+
+function inboxResume(id) {
+  const r = STATE.pipeline.find(x => x.id === id);
+  if (!r) return;
+  rvLoadFromScore(r.company, r.role, r.jd || '');
+  toast(`${r.company} loaded into /resume`);
+}
+
+function inboxPass(id) {
+  const r = STATE.pipeline.find(x => x.id === id);
+  if (!r) return;
+  const name = r.company;
+  STATE.pipeline = STATE.pipeline.filter(x => x.id !== id);
+  saveState();
+  renderInbox();
+  renderPipelineMini();
+  toast(`${name} removed`);
 }
 
 function openAddRole() {
@@ -2055,6 +2266,7 @@ function removeRole(id) {
 }
 
 const CLOSED_STAGES = ['Withdrawn','Rejected','Closed'];
+const INBOX_STAGE = 'To Review';
 function updatePipelineStage(id, stage) {
   const r = STATE.pipeline.find(x => x.id === id);
   if (!r) return;
@@ -2263,6 +2475,75 @@ function renderActivityGrid() {
   el.innerHTML = cells.join('');
 }
 
+// ==================== JD PREPROCESSOR ====================
+// Strips boilerplate (EEO, benefits, culture sections) before sending to Claude.
+// The local score engine always gets the full raw JD — only Claude prompts use this.
+function preprocessJD(raw) {
+  if (!raw) return '';
+  const words = raw.trim().split(/\s+/);
+  if (words.length <= 450) return raw; // short enough, no benefit
+
+  const DROP_PHRASES = [
+    // EEO / legal
+    'equal opportunity employer', 'affirmative action', 'regardless of race',
+    'regardless of gender', 'protected characteristic', 'applicants will receive consideration',
+    'disability or veteran', 'we do not discriminate',
+    // Benefits
+    '401(k)', '401k matching', 'dental insurance', 'vision insurance', 'health insurance',
+    'life insurance', 'paid time off', 'unlimited pto', 'vacation days', 'parental leave',
+    'maternity leave', 'paternity leave', 'mental health benefit', 'wellness program',
+    'gym reimbursement', 'commuter benefit', 'free snack', 'free lunch', 'catered meal',
+    'ping pong', 'game room', 'company events', 'team retreats',
+    // Company pitch / about us
+    'our culture', 'our values', 'our mission is to', 'our story', 'who we are',
+    'about us', 'about the company', 'company overview', 'our team of',
+    'we believe in', 'we are proud', 'we strive to', 'we are committed to building',
+    'we are an innovative', 'we are a fast-growing', 'we are a leading',
+    'founded in', 'headquartered in', 'offices across',
+    // Apply boilerplate
+    'apply now', 'submit your application', 'click here to apply', 'to apply, please',
+    'background check', 'drug screen', 'work authorization',
+    // Comp disclosure
+    'salary range is', 'compensation range', 'total compensation package',
+    'base salary range', 'pay range',
+  ];
+
+  // Split on blank lines (section breaks) — works for most formatted JDs
+  const blocks = raw.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
+
+  const kept = blocks.filter(block => {
+    const lower = block.toLowerCase();
+    return !DROP_PHRASES.some(p => lower.includes(p));
+  });
+
+  // If we barely dropped anything, just word-cap
+  const droppedRatio = (blocks.length - kept.length) / blocks.length;
+  const cleaned = droppedRatio > 0.1 ? kept.join('\n\n') : raw;
+
+  const cleanedWords = cleaned.split(/\s+/);
+  if (cleanedWords.length <= 700) return cleaned;
+  return cleanedWords.slice(0, 700).join(' ') + ' [...]';
+}
+
+function updateJdStats(textareaId, statsId) {
+  const ta = document.getElementById(textareaId);
+  const el = document.getElementById(statsId);
+  if (!ta || !el) return;
+  const raw = ta.value.trim();
+  if (!raw) { el.textContent = ''; el.className = 'jd-stats'; return; }
+  const rawWords = raw.split(/\s+/).length;
+  const processed = preprocessJD(raw);
+  const procWords = processed.split(/\s+/).filter(Boolean).length;
+  if (procWords < rawWords) {
+    const pct = Math.round((1 - procWords / rawWords) * 100);
+    el.textContent = `${rawWords.toLocaleString()} words → ${procWords} sent to Claude · ${pct}% boilerplate trimmed`;
+    el.className = 'jd-stats trimmed';
+  } else {
+    el.textContent = `${rawWords.toLocaleString()} words`;
+    el.className = 'jd-stats';
+  }
+}
+
 // ==================== SCORE ENGINE ====================
 function runScore() {
   const company = document.getElementById('score-company').value.trim();
@@ -2279,7 +2560,9 @@ function runScore() {
     s5: scoreKeywords(jdLower, ['director','senior manager','vp','lead','head of','strategic','executive','global'], 10)
   };
 
-  const total = Math.round(scores.s1*0.25 + scores.s2*0.25 + scores.s3*0.20 + scores.s4*0.20 + scores.s5*0.10);
+  const base = Math.round(scores.s1*0.25 + scores.s2*0.25 + scores.s3*0.20 + scores.s4*0.20 + scores.s5*0.10);
+  const { pts: penPts, flags: penFlags } = calcPenalties(jdLower);
+  const total = Math.max(0, base - penPts);
 
   animateScore('sf1','sp1', scores.s1);
   animateScore('sf2','sp2', scores.s2);
@@ -2299,7 +2582,7 @@ function runScore() {
     } else {
       verdictEl.innerHTML = '<span class="verdict-pill verdict-skip">✗ Skip - better opportunities exist</span>';
     }
-    document.getElementById('score-angles').innerHTML = buildScoreAngles(jdLower, total);
+    document.getElementById('score-angles').innerHTML = buildScoreAngles(jdLower, total, penFlags);
     buildScorePrompt(company, jd);
     saveScoreToHistory(company || 'Unknown role', total);
     // Show "build resume" button after scoring
@@ -2321,25 +2604,28 @@ function animateScore(fillId, pctId, val) {
   document.getElementById(pctId).textContent = val + '%';
 }
 
-function buildScoreAngles(jd, total) {
+function buildScoreAngles(jd, total, penFlags = []) {
   const angles = [];
-  if (jd.includes('ecosystem') || jd.includes('platform') || jd.includes('marketplace')) angles.push('Platform or ecosystem language matches your background');
-  if (jd.includes('0 to 1') || jd.includes('build') || jd.includes('launch') || jd.includes('founding')) angles.push('Builder signal present - highlight your 0-to-1 credentials from CLAUDE.md');
-  if (jd.includes('ai') || jd.includes('machine learning') || jd.includes('llm') || jd.includes('edge')) angles.push('AI/tech angle - reference your relevant domain expertise and certifications');
-  if (jd.includes('enterprise') || jd.includes('fortune') || jd.includes('large')) angles.push('Enterprise motion - lead with scale metrics and cross-functional experience');
+  if (jd.includes('ecosystem') || jd.includes('isv') || jd.includes('platform')) angles.push('Partner ecosystem experience maps directly');
+  if (jd.includes('0 to 1') || jd.includes('build') || jd.includes('launch')) angles.push('0-to-1 builder signal - mention foundational work');
+  if (jd.includes('ai') || jd.includes('edge') || jd.includes('on-device')) angles.push('AI/Edge AI angle - Flagship Product on-device AI is the differentiator');
+  if (jd.includes('hardware') || jd.includes('device') || jd.includes('oem')) angles.push('Hardware/OEM angle - Channel Partners (company, Major Partner) is underused here');
   const gaps = [];
-  if (jd.includes('technical') && !jd.includes('business')) gaps.push('Technical role - verify your engineering credentials are front-loaded on resume');
-  if (jd.includes('sales') && !jd.includes('partner') && !jd.includes('bd')) gaps.push('Sales-forward JD - reframe your BD/partnership wins as revenue outcomes');
-  if (total < 50) gaps.push('Low overall fit - review whether this role aligns with your target profile before applying');
-  return `<strong style="color:var(--text);">Strongest angles:</strong><br>${(angles.length ? angles : ['Paste a JD to see specific angle analysis']).map(a=>'+ '+a).join('<br>')}<br><br><strong style="color:var(--text);">Watch for:</strong><br>${(gaps.length ? gaps : ['No major gaps detected']).map(g=>'− '+g).join('<br>')}`;
+  if (!jd.includes('api') && !jd.includes('sdk')) gaps.push('No API/SDK integration language - technical BD depth less visible');
+  if (jd.includes('sales') && !jd.includes('partner')) gaps.push('Sales-forward JD - reframe as partner-assisted revenue, not direct sales');
+  const penHtml = penFlags.length
+    ? `<br><br><strong style="color:var(--red);">Must-have gaps (score penalized):</strong><br>${penFlags.map(f=>'▼ '+f).join('<br>')}`
+    : '';
+  return `<strong style="color:var(--text);">Strongest angles:</strong><br>${(angles.length ? angles : ['Review JD for specific angle mapping']).map(a=>'+ '+a).join('<br>')}<br><br><strong style="color:var(--text);">Watch for:</strong><br>${(gaps.length ? gaps : ['No major gaps detected']).map(g=>'− '+g).join('<br>')}${penHtml}`;
 }
 
 function buildScorePrompt(company, jd) {
+  const promptJd = preprocessJD(jd);
   const prompt = `Run /score for this role using the rules in WORKFLOW_GUIDE.md.
 
 <role>${company || '[company name]'}</role>
 <jd>
-${jd || '[paste JD here]'}
+${promptJd || '[paste JD here]'}
 </jd>`;
   document.getElementById('score-prompt-out').textContent = prompt + '\n';
   const btn = document.createElement('button');
@@ -2387,8 +2673,19 @@ function scoreToResume() {
 }
 
 // ==================== WORKFLOW GENERATORS ====================
+function loadBriefYesterday() {
+  const lb = STATE.lastBrief;
+  const wrap = document.getElementById('brief-yesterday-wrap');
+  if (!lb || !lb.actions) { wrap.style.display = 'none'; return; }
+  const today = new Date().toDateString();
+  if (lb.date === today) { wrap.style.display = 'none'; return; }
+  document.getElementById('brief-yesterday-actions').textContent = lb.actions;
+  wrap.style.display = 'block';
+}
+
 function runBrief() {
   const followups = document.getElementById('brief-followups').value.trim();
+  const yesterdayDone = document.getElementById('brief-yesterday-done')?.value.trim() || '';
   const active = STATE.pipeline.filter(r => !['Withdrawn','Rejected','Closed'].includes(r.stage));
   const pipelineSummary = active.length
     ? active.map(r => '  ' + r.company + ' - ' + r.role + ' - ' + r.stage + ' [' + r.health + '] - Next: ' + r.nextStep).join('\n')
@@ -2414,30 +2711,40 @@ ${pipelineSummary}
 
 <overdue_followups>
 ${nudgeSummary}
-</overdue_followups>`;
+</overdue_followups>
+
+<gmail_sources>
+Search Gmail for emails from the senders and domains listed in SOURCES.md. 
+Focus on the last 48–72 hours. Summarize any new role opportunities, status updates, or recruiter messages.
+</gmail_sources>${yesterdayDone ? `\n\n<yesterday_update>\nFrom yesterday's top 3 actions, here is what got done:\n${yesterdayDone}\nFactor this into today's priorities and flag anything still outstanding.\n</yesterday_update>` : ''}`;
   const el = document.getElementById('brief-output');
   el.textContent = prompt + '\n';
   const btn = document.createElement('button');
   btn.className = 'prompt-copy-btn'; btn.textContent = 'copy';
   btn.onclick = () => copyPrompt('brief-output');
   el.appendChild(btn);
+  // Save for tomorrow's brief memory
+  STATE.lastBrief = { date: new Date().toDateString(), actions: pipelineSummary ? `Top actions generated ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})}:\n- Review pipeline: ${active.map(r=>r.company).join(', ')}\n- Address overdue follow-ups\n- Score any new roles from Gmail alerts` : '', prompt };
+  saveState();
   logUsage('/brief', 'Morning briefing generated');
   toast('Brief prompt ready - copy and paste into Claude');
 }
 
 function runApply() {
   const role = document.getElementById('apply-role').value.trim();
-  const jd = document.getElementById('apply-jd').value.trim();
+  const jd = preprocessJD(document.getElementById('apply-jd').value.trim());
   const contact = document.getElementById('apply-contact').value;
   const type = document.getElementById('apply-type').value;
   if (!role && !jd) { toast('Enter a role or paste a JD'); return; }
 
   const bulletGuidance = {
-    enterprise: 'Lead with: Your highest-scale metrics and cross-functional leadership from BULLET_LIBRARY.md. Supporting: governance, exec influence, program management bullets.',
-    startup: 'Lead with: Your most recent "first hire" or 0-to-1 bullet. Supporting: speed-to-value metrics, founding-stage work, self-directed programs.',
-    technical: 'Lead with: Your most technical credential - integration, architecture, or product-depth work. Supporting: any engineering or certification background.',
-    general: 'Lead with: Your single highest-impact metric. Let the JD keywords guide which bullets to prioritize from BULLET_LIBRARY.md.'
-  }[type] || 'Use the bullets in BULLET_LIBRARY.md that best match the JD language. Lead with metrics and outcomes, not activities.';
+    hardware: 'Lead with: [Hardware/Device bullet]. Supporting: [Scale/Exec bullet].',
+    enterprise: 'Lead with: [Enterprise scale bullet]. Supporting: [Governance bullet].',
+    startup: 'Lead with: [Founding/First-hire bullet]. Supporting: [Relevant projects].',
+    supply: 'Lead with: [Revenue/Scale bullet]. Supporting: [Secondary bullet].',
+    alliances: 'Lead with: [Portfolio/Governance bullet].',
+    privacy: 'Lead with: [Compliance/Privacy bullet]. Avoid: [Irrelevant bullets].'
+  }[type];
 
   const prompt = `Run /apply for this role using the rules in WORKFLOW_GUIDE.md.
 
@@ -2446,14 +2753,38 @@ function runApply() {
 ${jd || '[paste JD here]'}
 </jd>
 <bullet_guidance>${bulletGuidance}</bullet_guidance>
-<contact_context>${contact === 'none' ? 'No warm contact - cold referral strategy needed' : contact === 'weak' ? 'Weak 2nd-degree connection - warm outreach angle needed' : 'Strong 1st-degree contact - referral path available'}</contact_context>`;
+<contact_context>${contact === 'none' ? 'No warm contact - cold referral strategy needed' : contact === 'weak' ? 'Weak 2nd-degree connection - warm outreach angle needed' : contact === 'weak1' ? 'Weak 1st-degree connection - know them but not closely, use a specific angle to re-engage before applying' : 'Strong 1st-degree contact - referral path available, activate directly'}</contact_context>`;
   document.getElementById('apply-prompt-out').textContent = prompt + '\n';
   const btn = document.createElement('button');
   btn.className = 'prompt-copy-btn'; btn.textContent = 'copy';
   btn.onclick = () => copyPrompt('apply-prompt-out');
   document.getElementById('apply-prompt-out').appendChild(btn);
+  document.getElementById('apply-mark-sent-wrap').style.display = 'block';
   logUsage('/apply', role || 'Application package');
   toast('Application prompt ready');
+}
+
+function markApplicationSent() {
+  const roleField = document.getElementById('apply-role').value.trim();
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const companyGuess = roleField.split('-')[0].trim();
+  const r = STATE.pipeline.find(x =>
+    x.company.toLowerCase().includes(companyGuess.toLowerCase()) ||
+    companyGuess.toLowerCase().includes(x.company.toLowerCase())
+  );
+  if (r) {
+    r.appliedAt = new Date().toISOString();
+    r.lastAction = today;
+    r.stage = r.stage === 'To Review' || r.stage === 'Monitoring' ? 'Applied' : r.stage;
+    r.nextStep = r.nextStep || 'Wait for recruiter response';
+    saveState();
+    renderPipeline();
+    renderPipelineMini();
+    toast(`${r.company} stamped as sent — ${today}`);
+  } else {
+    toast(`No pipeline match for "${companyGuess}" — update manually`);
+  }
+  document.getElementById('apply-mark-sent-wrap').style.display = 'none';
 }
 
 function runReferral() {
@@ -2503,7 +2834,7 @@ function runMockDirect() {
 }
 
 function runMock() {
-  const role = document.getElementById('mock-role').value.trim() || 'my target role';
+  const role = document.getElementById('mock-role').value.trim() || 'a target role';
   const mode = document.getElementById('mock-mode').value;
   const prompt = `Run /mock for this role using the rules in WORKFLOW_GUIDE.md.
 
@@ -2603,7 +2934,7 @@ After reading, give me:
 
 Material to review:
 [paste your resume, cover note, or interview answer here]`,
-  'recruiter': `You are an in-house tech recruiter screening BD/Partnerships candidates. You have 30-45 seconds per resume. You are looking for: title match, clear career story, numbers present, right seniority.
+  'recruiter': `You are an in-house tech recruiter screening candidates. You have 30-45 seconds per resume. You are looking for: title match, clear career story, numbers present, right seniority.
 
 Screen-in or screen-out - and tell me exactly why.
 
@@ -2682,57 +3013,62 @@ function toast(msg) {
 // ==================== INIT ====================
 // ==================== RESUME GENERATOR ====================
 
-// SETUP: Replace this with your own resume data. Structure matches BULLET_LIBRARY.md.
-// Each key is a role/company. Each bullet has an id and text (t).
-// Run the system once, then customize bullets through the Claude rewrite step (Step 4).
 const RV_LIB={
-  company_a:{
-    label:'[Your Most Recent Company]',
-    title:'[Your Title]',
-    dates:'[Start Year] – Present',
-    bullets:[
-      {id:'a1',t:'[REPLACE] Your top impact bullet - lead with result, include a metric ($X, Y%, Z users).'},
-      {id:'a2',t:'[REPLACE] A cross-functional initiative you owned - who you aligned and what you delivered.'},
-      {id:'a3',t:'[REPLACE] A scale or growth achievement with a before/after metric.'},
-      {id:'a4',t:'[REPLACE] A technical or process achievement with a measurable business outcome.'},
-      {id:'a5',t:'[REPLACE] An optional differentiating credential or unique achievement for this role.'}
-    ]
-  },
-  company_b:{
-    label:'[Previous Company]',
-    title:'[Your Title]',
-    dates:'[Start Year] – [End Year]',
-    bullets:[
-      {id:'b1',t:'[REPLACE] Your strongest bullet from this role - deal, program, or initiative you owned.'},
-      {id:'b2',t:'[REPLACE] A revenue, pipeline, or growth metric with full context.'},
-      {id:'b3',t:'[REPLACE] A stakeholder alignment or executive influence story.'},
-      {id:'b4',t:'[REPLACE] A technical, product, or analytical depth bullet.'}
-    ]
-  },
-  company_c:{
-    label:'[Earlier Company]',
-    title:'[Your Title]',
-    dates:'[Start Year] – [End Year]',
-    bullets:[
-      {id:'c1',t:'[REPLACE] Best bullet from this role - most relevant to senior roles you are targeting.'},
-      {id:'c2',t:'[REPLACE] A scale or growth achievement with numbers.'}
-    ]
-  }
+  
+    {id:'p1',t:'Designed 0-to-1 enterprise BD programs for early-stage startups, establishing partner intake frameworks and outreach strategies.'},
+    {id:'p2',t:'Led market expansion for AI-driven commerce platforms by securing strategic distribution partnerships.'},
+    {id:'p3',t:'Secured foundational enterprise partners for early-stage ventures within 90 days of engagement.'},
+    {id:'p4',t:'Optimized API packaging and conversion tracking for high-growth platforms, increasing user conversion by 7%.'},
+    {id:'p5',t:'Implemented AI-driven GTM systems to automate outreach and drive national brand growth.'}
+  ]},
+  
+    {id:'q1',t:'Architected a tiered ISV/SI partner program from scratch, delivering $20M in pipeline and $9M in closed revenue.'},
+    {id:'q2',t:'Orchestrated complex SaaS integration deals with major financial institutions, managing cross-functional delivery across legal and engineering.'},
+    {id:'q3',t:'Increased customer activation metrics by 20% by defining success benchmarks and scaling partner adoption.'},
+    {id:'q4',t:'Developed embedded partnership models with major platforms to structure go-to-market motions.'},
+    {id:'q5',t:'Managed high-value strategic alliances, focusing on ecosystem growth and revenue diversification.'},
+    {id:'q6',t:'Led contract negotiations for multi-year partnership agreements with enterprise stakeholders.'},
+    {id:'q7',t:'Scaled the BD team from 1 to 5 members while maintaining 120% quota attainment.'},
+    {id:'q8',t:'Implemented partner portal and CRM automation to streamline deal registration and tracking.'}
+  ]},
+  
+    {id:'h1',t:'Scaled platform revenue from $1M to $100M by negotiating global joint-development and distribution agreements.'},
+    {id:'h2',t:'Built a 1,000+ ISV ecosystem, growing user reach from 2M to 30M through strategic partner onboarding.'},
+    {id:'h3',t:'Negotiated licensing and co-marketing deals with top-tier global app developers and platforms.'},
+    {id:'h4',t:'Led on-device AI integration partnerships, enabling edge-native features for major global partners.'},
+    {id:'h5',t:'Managed a $50M annual partnership budget, allocating resources across co-marketing and R&D.'},
+    {id:'h6',t:'Established governance frameworks for multi-regional partnership operations across 15+ markets.'},
+    {id:'h7',t:'Drive SDK adoption among top 100 global developers, increasing platform stickiness by 40%.'},
+    {id:'h8',t:'Awarded "Excellence Award" twice for leadership in ecosystem building and revenue growth.'},
+    {id:'h9',t:'Collaborated with product teams to define the 3-year roadmap for partner-facing APIs.'},
+    {id:'h10',t:'Represented the company at major industry events as a keynote speaker on platform strategy.'}
+  ]},
+  
+    {id:'pa1',t:'Developed alternate monetization channels (OEM integrations, value exchange ads, retargeting) from start to finish.'},
+    {id:'pa2',t:'Launched multiple new revenue channels from business case through partner activation and full scale.'},
+    {id:'pa3',t:'Built platform partnerships with major hardware and device manufacturers to expand distribution.'},
+    {id:'pa4',t:'Activated and managed ad inventory partnerships adding $35M YoY in incremental revenue.'},
+    {id:'pa5',t:'Championed early-stage product ideas through full lifecycle: business case, partner sourcing, and pilot activation.'}
+  ]},
+  company:{label:'Mobile Ad Network',title:'Senior Manager, BD',dates:'2011 – 2012',bullets:[
+    {id:'m1',t:'Delivered 185% YoY revenue growth and 214% YoY volume growth, maintaining full accountability for $16M in annual revenues.'}
+  ]},
+  company:{label:'Global Electronics Maker',title:'Business Development Manager',dates:'2008 – 2011',bullets:[
+    {id:'s1',t:'Architected monetization strategies for mobile devices, launching partnerships with major ad networks.'},
+    {id:'s2',t:'Managed end-to-end partnership lifecycle for device launches across 16 global markets.'}
+  ]}
 };
 
-// SETUP: Update these mappings after you replace RV_LIB above with your own companies/bullets.
-// Maps each template type to which bullet IDs to show by default.
 const RV_SEL={
-  enterprise:{company_a:['a1','a2','a3','a4'],company_b:['b1','b2','b3','b4'],company_c:['c1','c2']},
-  edgeai:    {company_a:['a1','a3','a4','a5'],company_b:['b1','b2','b4'],company_c:['c1','c2']},
-  startup:   {company_a:['a1','a2','a5','a3'],company_b:['b1','b3'],company_c:['c1']},
-  hardware:  {company_a:['a1','a2','a3'],company_b:['b1','b2','b3'],company_c:['c1','c2']},
-  alliances: {company_a:['a1','a2','a3','a4'],company_b:['b1','b2','b3'],company_c:['c1','c2']},
-  supply:    {company_a:['a1','a4'],company_b:['b1','b2'],company_c:['c1']},
-  general:   {company_a:['a1','a2','a3','a4','a5'],company_b:['b1','b2','b3','b4'],company_c:['c1','c2']}
+  
+  
+  
+  
+  
+  
 };
 
-let RV = {company:'',role:'',jd:'',tmpl:'',rt:'',active:{},rewritten:null,timer:null};
+let RV = {company:'',role:'',jd:'',tmpl:'',rt:'',active:{},rewritten:null,research:'',timer:null};
 let RV_STEP = 1;
 
 function rvGoStep(n) {
@@ -2758,15 +3094,54 @@ function rvLoadFromScore(company, role, jd) {
   document.getElementById('rv-company').value = company;
   document.getElementById('rv-role').value = role;
   document.getElementById('rv-jd').value = jd;
+  rvClearResearch();
   rvLiveScore();
   nav('resume');
   toast('Loaded from /score - continue to step 2');
+}
+
+function renderResumePipelineQL() {
+  const el = document.getElementById('rv-pipeline-ql');
+  if (!el) return;
+  const CLOSED = ['Rejected','Withdrawn','Closed'];
+  const roles = STATE.pipeline.filter(r => !CLOSED.includes(r.stage));
+  if (!roles.length) {
+    el.innerHTML = '<span style="font-family:var(--mono);font-size:10px;color:var(--text3);">No active pipeline roles — add via /pipeline or the extension.</span>';
+    return;
+  }
+  el.innerHTML = roles.map(r => {
+    const label = r.role ? `${r.company} · ${r.role.length > 28 ? r.role.slice(0,28)+'…' : r.role}` : r.company;
+    const hasJd = r.jd ? '' : ' style="opacity:0.65;"';
+    const tip = r.jd ? `${r.company} — ${r.role||''}` : `${r.company} — no JD stored`;
+    return `<button class="btn"${hasJd} style="font-size:11px;font-family:var(--mono);" onclick="rvLoadFromPipeline(${r.id})" title="${tip}">${label}</button>`;
+  }).join('');
+}
+
+function rvClearResearch() {
+  RV.research = '';
+  const inp = document.getElementById('rv-research-input'); if (inp) inp.value = '';
+  const wrap = document.getElementById('rv-research-prompt-wrap'); if (wrap) wrap.style.display = 'none';
+  const body = document.getElementById('rv-research-body'); if (body) body.style.display = 'none';
+  const chev = document.getElementById('rv-research-chevron'); if (chev) chev.textContent = '›';
+}
+
+function rvLoadFromPipeline(id) {
+  const r = STATE.pipeline.find(x => x.id === id);
+  if (!r) return;
+  RV.company = r.company; RV.role = r.role || ''; RV.jd = r.jd || '';
+  document.getElementById('rv-company').value = r.company;
+  document.getElementById('rv-role').value = r.role || '';
+  document.getElementById('rv-jd').value = r.jd || '';
+  rvClearResearch();
+  rvLiveScore();
+  toast(r.jd ? `${r.company} loaded — continue to step 2` : `${r.company} loaded — paste the JD below before continuing`);
 }
 
 function rvQL(co,ro,tm,rt) {
   document.getElementById('rv-company').value=co;
   document.getElementById('rv-role').value=ro;
   RV.company=co; RV.role=ro;
+  rvClearResearch();
   rvSelTmpl(tm); rvSelRT(rt); rvLiveScore();
   toast(co+' loaded');
 }
@@ -2784,7 +3159,9 @@ function rvLiveScore() {
     const s3=rvKw(tx,['technical','engineering','api','integration','sdk','architecture','soc','npu','on-device','edge','silicon','risc-v']);
     const s4=rvKw(tx,['ai','machine learning','llm','edge ai','on-device','genai','model','intelligent','neural','inference']);
     const s5=rvKw(tx,['director','senior manager','vp','head of','strategic','executive','global','principal','lead']);
-    const tot=Math.round(s1*.25+s2*.25+s3*.20+s4*.20+s5*.10);
+    const base=Math.round(s1*.25+s2*.25+s3*.20+s4*.20+s5*.10);
+    const {pts:penPts,flags:penFlags}=calcPenalties(RV.jd.toLowerCase());
+    const tot=Math.max(0,base-penPts);
     document.getElementById('rv-score-wrap').style.display='block';
     [[1,s1],[2,s2],[3,s3],[4,s4],[5,s5]].forEach(([n,v])=>{
       document.getElementById('rvf'+n).style.width=v+'%';
@@ -2795,6 +3172,16 @@ function rvLiveScore() {
     te.style.color=tot>=75?'var(--accent)':tot>=50?'var(--amber)':'var(--red)';
     const vEl=document.getElementById('rv-sc-verdict');
     vEl.innerHTML=tot>=75?'<span style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:10px;background:var(--accent-dim);color:var(--accent);border:1px solid rgba(184,224,74,.25)">✓ Apply now</span>':tot>=50?'<span style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:10px;background:rgba(224,168,74,.1);color:var(--amber);border:1px solid rgba(224,168,74,.2)">○ Consider</span>':'<span style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:10px;background:rgba(224,90,74,.1);color:var(--red);border:1px solid rgba(224,90,74,.2)">✗ Skip</span>';
+    // Penalty flags — shown below the verdict
+    const penEl=document.getElementById('rv-sc-penalties');
+    if(penEl){
+      if(penFlags.length){
+        penEl.innerHTML=penFlags.map(f=>`<div style="font-family:var(--mono);font-size:9px;color:var(--red);margin-top:4px;">▼ ${f}</div>`).join('');
+        penEl.style.display='block';
+      } else {
+        penEl.innerHTML=''; penEl.style.display='none';
+      }
+    }
     const isEdge=s3>68||s4>70||tx.includes('soc')||tx.includes('npu')||tx.includes('edge ai')||tx.includes('silicon');
     const isStart=s2>72||tx.includes('founding')||tx.includes('first hire')||tx.includes('0 to 1');
     const sg=isEdge?'edgeai':isStart?'startup':'enterprise';
@@ -2803,6 +3190,39 @@ function rvLiveScore() {
   }, 500);
 }
 function rvKw(tx,ws){ return Math.round(50+Math.min(ws.filter(w=>tx.includes(w)).length/Math.max(ws.length*.35,1),1)*50); }
+
+function calcPenalties(jd) {
+  const flags = [];
+  let pts = 0;
+  const hyperscalerReq =
+    /hyperscaler/i.test(jd) ||
+    /(must.have|required|mandatory|essential|minimum).{0,80}(aws|azure|gcp|google cloud|cloud partner)/i.test(jd) ||
+    /(aws|azure|gcp|google cloud).{0,50}(required|must.have|mandatory|essential|certification)/i.test(jd) ||
+    /\d\+?\s*years?.{0,40}(aws|azure|gcp|hyperscaler|google cloud)/i.test(jd);
+  if (hyperscalerReq) { flags.push('Hyperscaler must-have (AWS/Azure/GCP) — not a primary credential (-18)'); pts += 18; }
+  const highYearMatch = jd.match(/\b(8|9|10|11|12|15|20)\+?\s*years?\b/i);
+  if (highYearMatch) { flags.push(highYearMatch[0].trim()+' minimum detected — verify alignment (-8)'); pts += 8; }
+  if (/(carry\s+a\s+quota|quota.carrier|sales\s+quota|revenue\s+quota|closed.{0,20}\$[\d]+M?\s+arr|close\s+rate)/i.test(jd) &&
+      !/(partner|ecosystem|alliance|channel|platform)/i.test(jd)) {
+    flags.push('Quota-carrying sales role — not a BD/partnerships structure (-15)'); pts += 15;
+  }
+  if (/(federal|department\s+of\s+defense|\bdod\b|security\s+clearance|clearance\s+required|top\s+secret|ts\/sci)/i.test(jd)) {
+    flags.push('Clearance or federal requirement — not applicable (-22)'); pts += 22;
+  }
+  if (/(healthcare|hipaa|\behr\b|medical\s+device|life\s+sciences|pharmaceutical|clinical\s+trials)/i.test(jd) &&
+      !/(ai|platform|api|developer|partner)/i.test(jd)) {
+    flags.push('Healthcare-specific domain — no direct credential (-10)'); pts += 10;
+  }
+  if (/(salesforce\s+certified|salesforce\s+admin|sap\s+certif|oracle\s+certif|servicenow\s+certif)/i.test(jd)) {
+    flags.push('Platform certification required — not held (-12)'); pts += 12;
+  }
+  // User speaks Hindi and English only — penalize hard foreign-language requirements
+  if (/(fluent\s+in|native\s+(speaker|proficiency)|full\s+professional\s+proficiency\s+in|business\s+proficiency\s+in|must\s+(speak|be\s+fluent)|bilingual|proficiency\s+in)\s+(french|german|spanish|mandarin|chinese|japanese|korean|portuguese|italian|dutch|arabic|russian|turkish|polish|hebrew|thai|vietnamese)/i.test(jd)) {
+    flags.push('Non-English/Hindi language required — not a primary language (-18)'); pts += 18;
+  }
+
+  return { pts: Math.min(pts, 40), flags };
+}
 
 function rvSelTmpl(t) {
   RV.tmpl=t;
@@ -2818,9 +3238,8 @@ function rvBuildBullets() {
   RV.active={};
   let html='';
   Object.keys(RV_LIB).forEach(rk=>{
-    const r=RV_LIB[rk]; const rt=RV.rt||'general';
-    const rtSel=RV_SEL[rt]||RV_SEL.general||RV_SEL.enterprise||{};
-    const ids=rtSel[rk]||[];
+    const r=RV_LIB[rk]; const rt=RV.rt||'enterprise';
+    const ids=(RV_SEL[rt]||RV_SEL.enterprise)[rk]||[];
     const sel=ids.map(id=>r.bullets.find(b=>b.id===id)).filter(Boolean);
     RV.active[rk]=sel.map(b=>({...b,on:true}));
     html+=`<div class="rv-bsec"><div class="rv-brole">${r.label}</div>${sel.map((b,j)=>`<div class="rv-bitem" id="rvbi-${rk}-${j}"><span class="rv-bdot">•</span><span class="rv-btext">${b.t}</span><button class="rv-btog" onclick="rvTogB('${rk}',${j})">✕</button></div>`).join('')}</div>`;
@@ -2836,16 +3255,49 @@ function rvTogB(rk,j) {
 }
 function rvGetActive() {
   const out=[];
-  Object.entries(RV.active).forEach(([rk,bs])=>{
-    const lib=RV_LIB[rk];
-    if (!lib) return;
-    bs.filter(b=>b.on).forEach(b=>out.push({role:lib.label,text:b.t}));
-  });
+  Object.entries(RV.active).forEach(([rk,bs])=>bs.filter(b=>b.on).forEach(b=>out.push({role:RV_LIB[rk].label,text:b.t})));
   return out;
 }
 
+function rvToggleResearch() {
+  const body = document.getElementById('rv-research-body');
+  const chevron = document.getElementById('rv-research-chevron');
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  chevron.textContent = open ? '›' : '⌄';
+}
+
+function rvGenResearch() {
+  const company = RV.company || document.getElementById('rv-company').value.trim();
+  const role = RV.role || document.getElementById('rv-role').value.trim();
+  const jd = RV.jd || document.getElementById('rv-jd').value.trim();
+  if (!company) { toast('Enter a company name first'); return; }
+  const prompt = `Research ${company} for a BD/Partnerships resume tailoring exercise. I am preparing to apply for: ${role || 'a BD/Partnerships role'}.
+
+Search the web and return a structured summary covering:
+1. **Recent news** (last 6 months) — funding rounds, product launches, partnerships announced, leadership changes
+2. **Strategic priorities** — what is the company trying to accomplish right now? What problems are they solving?
+3. **Partnership/ecosystem signals** — any ISV programs, developer ecosystem pushes, co-sell motions, or platform bets
+4. **Hiring signals** — what does the BD/Partnerships team look like? What roles are they hiring for?
+5. **Competitive position** — who are they up against and what is their differentiation?
+${jd ? `\nJD context (use this to sharpen relevance):\n${jd.slice(0,800)}` : ''}
+
+Keep the summary under 300 words. Be specific — name the partnerships, the dollar amounts, the product names. I will paste this back into my resume builder to align bullet selection.`;
+
+  const el = document.getElementById('rv-research-prompt');
+  el.textContent = prompt + '\n';
+  const btn = document.createElement('button');
+  btn.className = 'prompt-copy-btn'; btn.textContent = 'copy';
+  btn.onclick = () => copyPrompt('rv-research-prompt');
+  el.appendChild(btn);
+  document.getElementById('rv-research-prompt-wrap').style.display = 'block';
+  toast('Research prompt ready — copy into Claude');
+}
+
 function rvMkPrompt(bs,ctx) {
-  return `Rewrite these resume bullets for: ${RV.role||'[role]'} at ${RV.company||'[company]'}.\n\n${RV.jd?'JD:\n'+RV.jd+'\n\n':''}${ctx?'Extra context: '+ctx+'\n\n':''}Bullets:\n${bs.map(b=>'['+b.role+'] '+b.text).join('\n')}\n\nRules: Match JD language exactly where authentic. Preserve every metric unchanged — never invent or modify any number. Lead each bullet with impact not activity. Under 40 words per bullet. Output: [Role Label] • rewritten text, one per line.`;
+  const research = RV.research ? `\n\n<company_research>\n${RV.research}\n</company_research>` : '';
+  const jd = preprocessJD(RV.jd || document.getElementById('rv-jd').value.trim());
+  return `Rewrite these resume bullets for: ${RV.role||'[role]'} at ${RV.company||'[company]'}.\n\n${jd?'JD:\n'+jd+'\n\n':''}${ctx?'Extra context: '+ctx+'\n\n':''}${research ? research+'\n\nUse the company research above to sharpen language — mirror their product terms, ecosystem language, and current strategic priorities where authentic.\n\n' : ''}Bullets:\n${bs.map(b=>'['+b.role+'] '+b.text).join('\n')}\n\nRules: Match JD language exactly where authentic. Preserve every metric unchanged ($20M, 120%, 1,000+, etc). Lead each bullet with impact not activity. Under 40 words per bullet. Output: [Role Label] • rewritten text, one per line.`;
 }
 function rvBuildManualPrompt() {
   const bs=rvGetActive(); const ctx=document.getElementById('rv-ctx')?.value?.trim()||'';
@@ -2856,24 +3308,54 @@ function rvBuildManualPrompt() {
   btn.onclick=()=>copyPrompt('rv-manual-prompt'); el.appendChild(btn);
 }
 
-function rvRunClaude() {
+async function rvRunClaude() {
+  const btn=document.getElementById('rv-claude-btn');
+  const wrap=document.getElementById('rv-claude-wrap');
+  const out=document.getElementById('rv-claude-out');
   const bs=rvGetActive();
-  if (!bs.length) { toast('No active bullets - select at least one'); return; }
-  rvBuildManualPrompt();
-  copyPrompt('rv-manual-prompt');
-  toast('Rewrite prompt copied - paste into your Claude Project');
-  logUsage('/resume', 'Copy rewrite prompt: '+(RV.company||'role'));
+  if (!bs.length) { toast('No active bullets'); return; }
+  btn.disabled=true; btn.innerHTML='<span class="rv-spinner"></span>Thinking...';
+  wrap.style.display='block'; out.innerHTML='<span class="rv-cursor"></span>';
+  const ctx=document.getElementById('rv-ctx').value.trim();
+  const prompt=rvMkPrompt(bs,ctx);
+  try {
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,stream:true,
+        system:"You are an expert resume writer for senior BD and Partnerships executives. Rewrite bullets to precisely match a target role's language while preserving all metrics exactly. Never invent or remove numbers.",
+        messages:[{role:'user',content:prompt}]})
+    });
+    out.textContent=''; let full='';
+    const rdr=resp.body.getReader(); const dec=new TextDecoder();
+    while(true){
+      const{done,value}=await rdr.read(); if(done) break;
+      for(const line of dec.decode(value).split('\n')){
+        if(!line.startsWith('data: ')) continue;
+        try{const d=JSON.parse(line.slice(6));if(d.type==='content_block_delta'&&d.delta?.text){full+=d.delta.text;out.textContent=full;out.scrollTop=out.scrollHeight;}}catch(e){}
+      }
+    }
+    RV.rewritten=full;
+    document.getElementById('rv-claude-accept').style.display='flex';
+    btn.disabled=false; btn.textContent='Rewrite with Claude →';
+    toast('Rewrites ready - review and accept');
+    logUsage('/resume', 'Claude rewrite: '+(RV.company||'role'));
+  } catch(err) {
+    out.textContent='Could not connect to Claude API. Use the prompt block below to rewrite manually.';
+    btn.disabled=false; btn.textContent='Rewrite with Claude →';
+  }
 }
+function rvAcceptRewrites(){ document.getElementById('rv-claude-accept').style.display='none'; toast('Rewrites accepted ✓'); rvGoStep(5); }
+function rvRejectRewrites(){ RV.rewritten=null; document.getElementById('rv-claude-wrap').style.display='none'; rvGoStep(5); }
 
 function rvBuildStep5() {
-  const bs=rvGetActive(); const co=RV.company||'Company'; const ro=RV.role||'Target Role';
+  const bs=rvGetActive(); const co=RV.company||'Company'; const ro=RV.role||'Director, BD';
   const tmpl=RV.tmpl||'enterprise'; const rt=RV.rt||'enterprise';
   document.getElementById('rv-gen-summary').innerHTML=`Role: ${ro} at ${co}\nTemplate: ${tmpl}  ·  Role type: ${rt}\nBullets selected: ${bs.length}\nClaude rewrite: ${RV.rewritten?'yes - AI-optimized':'no - original library bullets'}`;
   rvBuildPreview();
   const safe=co.replace(/[^a-zA-Z0-9]/g,'_'); const safeR=ro.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
-  const fn=`Resume_${safe}_${safeR}.docx`;
+  const fn=`Your_Name_${safe}_${safeR}.docx`;
   const el=document.getElementById('rv-cli-cmd');
-  el.textContent=`node build_resume.js ${tmpl==='edgeai'?'edgeai':'enterprise'} "${co}" "${ro}" ${rt} ./${fn}\n`;
+  el.textContent=`node build_resume.js ${RV.tmpl} "${co}" "${ro}" ${RV.rt} ./output.docx
   const cbtn=document.createElement('button'); cbtn.className='prompt-copy-btn'; cbtn.textContent='copy';
   cbtn.onclick=()=>copyPrompt('rv-cli-cmd'); el.appendChild(cbtn);
   logUsage('/resume', co+' - '+tmpl+' template');
@@ -2881,21 +3363,24 @@ function rvBuildStep5() {
 
 function rvBuildPreview() {
   const co=RV.company||'Target'; const isEdge=RV.tmpl==='edgeai';
-  const TITLE=isEdge?'[YOUR PROFESSIONAL TITLE - TECHNICAL / PLATFORM]':'[YOUR PROFESSIONAL TITLE - ENTERPRISE / LEADERSHIP]';
-  let html=`<div class="rv-name">[YOUR NAME - Update in CLAUDE.md]</div><div class="rv-title">${TITLE}</div><div class="rv-contact">[your@email.com]  |  [Phone]  |  [linkedin.com/in/yourhandle]</div>`;
+  const TITLE=isEdge?'STRATEGIC BD & ECOSYSTEM PARTNERSHIPS  |  EDGE AI + PLATFORM GTM':'ENTERPRISE SERVICES & PARTNER ECOSYSTEM LEADER';
+  let html=`<div class="rv-name">YOUR NAME</div><div class="rv-title">${TITLE}</div><div class="rv-contact">your.email@example.com  |  000.000.0000  |  linkedin.com/in/yourprofile</div>`;
+  if (isEdge) {
+    html+=`<div class="rv-sec">SUMMARY</div><div class="rv-b">[Your specific industry summary/highlight paragraph.]</div><div class="rv-b">[Your second major achievement or skill area.]</div>`;
+  }
   html+=`<div class="rv-sec">WORK EXPERIENCE</div>`;
-  Object.keys(RV_LIB).forEach(rk=>{
+  ['co1','co2','co3'].forEach(rk=>{
     const active=(RV.active[rk]||[]).filter(b=>b.on); if(!active.length) return;
     const r=RV_LIB[rk];
-    const title=r.title||r.te||'[Your Title]';
+    const title=r.title;
     html+=`<div class="rv-co">${r.label} <span style="font-weight:400;font-style:italic;font-size:11px;color:#888;">${r.dates}</span></div><div class="rv-role-t">${title}</div>`;
     active.forEach(b=>{
       let txt=b.t;
-      if (RV.rewritten) { const lines=RV.rewritten.split('\n'); const lb=r.label.split(' ')[0].toLowerCase(); const m=lines.find(l=>l.toLowerCase().includes(lb)&&l.includes('•')); if(m) txt=m.replace(/^\[.*?\]\s*•?\s*/,'').trim(); }
+      if (RV.rewritten) { const lines=RV.rewritten.split('\n'); const lb=RV_LIB[rk].label.split(' ')[0].toLowerCase(); const m=lines.find(l=>l.toLowerCase().includes(lb)&&l.includes('•')); if(m) txt=m.replace(/^\[.*?\]\s*•?\s*/,'').trim(); }
       html+=`<div class="rv-b">${txt.substring(0,175)}${txt.length>175?'…':''}</div>`;
     });
   });
-  html+=`<div class="rv-sec">EDUCATION</div><div class="rv-b">[Your Degree - University Name]</div>`;
+  html+=`<div class="rv-sec">EDUCATION</div><div class="rv-b">Degree - University</div><div class="rv-b">Certification - Institution</div>`;
   document.getElementById('rv-preview').innerHTML=html;
 }
 
@@ -2903,15 +3388,11 @@ function rvDownloadScript() {
   const co=RV.company||'Company'; const ro=RV.role||'Director BD';
   const tmpl=RV.tmpl||'enterprise'; const rt=RV.rt||'enterprise';
   const safe=co.replace(/[^a-zA-Z0-9]/g,'_'); const safeR=ro.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
-  const fn=`Resume_${safe}_${safeR}.docx`;
+  const fn=`Your_Name_${safe}_${safeR}.docx`;
   const bs=rvGetActive();
   const grouped={}; bs.forEach(b=>{ if(!grouped[b.role]) grouped[b.role]=[]; grouped[b.role].push(b.text); });
   const rw=RV.rewritten?`\n// CLAUDE REWRITES:\n${RV.rewritten.split('\n').map(l=>'// '+l).join('\n')}`:'';
-  // Build a dynamic script from the active bullets
-  const roleEntries = Object.entries(grouped).map(([label, bullets]) =>
-    `...rHdr('${label.toUpperCase()}','[Your Title]','[Dates]'),...(BULLETS[${JSON.stringify(label)}]||[]).map(bul)`
-  ).join(',');
-  const script=`// Job Search OS - Resume Generator\n// Role: ${ro} at ${co}\n// Run: npm install -g docx && node this_file.js\n${rw}\nconst{Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle,LevelFormat,TabStopType}=require('docx');\nconst fs=require('fs');\nconst BULLETS=${JSON.stringify(grouped,null,2)};\nconst C={dark:'1A1A1A',mid:'3D3D3D',light:'666666'};\nconst sp=(b=100,a=0)=>new Paragraph({spacing:{before:b,after:a},children:[new TextRun('')]});\nconst sec=txt=>[sp(200,0),new Paragraph({spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:6,color:C.dark}},children:[new TextRun({text:txt,font:'Arial',size:20,bold:true,color:C.dark,allCaps:true})]})];\nconst rHdr=(co,ti,dt)=>[new Paragraph({spacing:{before:160,after:20},tabStops:[{type:TabStopType.RIGHT,position:9360}],children:[new TextRun({text:co,font:'Arial',size:22,bold:true,color:C.dark}),new TextRun({text:'\\t'+dt,font:'Arial',size:17,italic:true,color:C.light})]}),new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:ti,font:'Arial',size:18,italic:true,color:C.mid})]})];\nconst bul=tx=>new Paragraph({numbering:{reference:'b',level:0},spacing:{before:30,after:30},children:[new TextRun({text:tx,font:'Arial',size:17,color:C.mid})]});\nconst body=[...sec('WORK EXPERIENCE'),${roleEntries},...sec('EDUCATION'),...[new Paragraph({spacing:{before:80,after:40},children:[new TextRun({text:'[Your Degree - University Name]',font:'Arial',size:17,color:C.mid})]})]];\nconst doc=new Document({numbering:{config:[{reference:'b',levels:[{level:0,format:LevelFormat.BULLET,text:'\\u2022',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:540,hanging:300}}}}]}]},styles:{default:{document:{run:{font:'Arial',size:18}}}},sections:[{properties:{page:{size:{width:12240,height:15840},margin:{top:1080,right:1080,bottom:1080,left:1080}}},children:body}]});\nPacker.toBuffer(doc).then(buf=>{fs.writeFileSync('./${fn}',buf);console.log('Resume saved: ${fn}');}).catch(err=>{console.error(err.message);process.exit(1);});\n`;
+  const script=`// Job Search OS - Resume Generator\n// Role: ${ro} at ${co}\n// Run: npm install -g docx && node this_file.js\n${rw}\nconst{Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle,WidthType,LevelFormat,TabStopType}=require('docx');\nconst fs=require('fs');\nconst BULLETS=${JSON.stringify(grouped,null,2)};\nconst C={dark:'1A1A1A',mid:'3D3D3D',light:'666666'};\nconst sp=(b=100,a=0)=>new Paragraph({spacing:{before:b,after:a},children:[new TextRun('')]});\nconst sec=txt=>[sp(200,0),new Paragraph({spacing:{before:0,after:80},border:{bottom:{style:BorderStyle.SINGLE,size:6,color:C.dark}},children:[new TextRun({text:txt,font:'Arial',size:20,bold:true,color:C.dark,allCaps:true})]})];\nconst rHdr=(co,ti,dt)=>[new Paragraph({spacing:{before:160,after:20},tabStops:[{type:TabStopType.RIGHT,position:9360}],children:[new TextRun({text:co,font:'Arial',size:22,bold:true,color:C.dark}),new TextRun({text:'\\t'+dt,font:'Arial',size:17,italic:true,color:C.light})]}),new Paragraph({spacing:{before:0,after:60},children:[new TextRun({text:ti,font:'Arial',size:18,italic:true,color:C.mid})]})];\nconst bul=tx=>new Paragraph({numbering:{reference:'b',level:0},spacing:{before:30,after:30},children:[new TextRun({text:tx,font:'Arial',size:17,color:C.mid})]});\nconst body=[...sec('WORK EXPERIENCE'),...rHdr('CURRENT COMPANY','Director','2022 – Present'),...(BULLETS['Current Company']||[]).map(bul),...rHdr('PREVIOUS COMPANY 1','Senior Manager','2018 – 2022'),...(BULLETS['Previous Company 1']||[]).map(bul),...sec('EDUCATION'),...[new Paragraph({spacing:{before:80,after:40},children:[new TextRun({text:'Degree - University',font:'Arial',size:17,color:C.mid})]}),new Paragraph({spacing:{before:0,after:40},children:[new TextRun({text:'Certification - Institution',font:'Arial',size:17,color:C.mid})]})]];\nconst doc=new Document({numbering:{config:[{reference:'b',levels:[{level:0,format:LevelFormat.BULLET,text:'\\u2022',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:540,hanging:300}}}}]}]},styles:{default:{document:{run:{font:'Arial',size:18}}}},sections:[{properties:{page:{size:{width:12240,height:15840},margin:{top:1080,right:1080,bottom:1080,left:1080}}},children:body}]});\nPacker.toBuffer(doc).then(buf=>{fs.writeFileSync('./${fn}',buf);console.log('Resume saved: ${fn}');}).catch(err=>{console.error(err.message);process.exit(1);});\n`;
   const blob=new Blob([script],{type:'text/javascript'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=`generate_${safe}_resume.js`; a.click();
@@ -2921,7 +3402,7 @@ function rvDownloadScript() {
 
 function rvCopyDocxPrompt() {
   const bs=rvGetActive(); const co=RV.company||'Company'; const ro=RV.role||'Director, BD';
-  const prompt=`Generate a tailored resume .docx.\n\nRole: ${ro} at ${co}\nTemplate: ${RV.tmpl||'enterprise'} | Role type: ${RV.rt||'enterprise'}\n\nSelected bullets:\n${bs.map(b=>'['+b.role+'] '+b.text).join('\n')}\n${RV.rewritten?'\nClaude-rewritten versions:\n'+RV.rewritten:''}\n\nRun in Claude Code:\nnode build_resume.js ${RV.tmpl==='edgeai'?'edgeai':'enterprise'} "${co}" "${ro}" ${RV.rt||'enterprise'} ./output.docx`;
+  const prompt=`Generate a tailored resume .docx for the user.\n\nRole: ${ro} at ${co}\nTemplate: ${RV.tmpl||'enterprise'} | Role type: ${RV.rt||'enterprise'}\n\nSelected bullets:\n${bs.map(b=>'['+b.role+'] '+b.text).join('\n')}\n${RV.rewritten?'\nClaude-rewritten versions:\n'+RV.rewritten:''}\n\nRun in Claude Code:\nnode build_resume.js ${RV.tmpl} "${co}" "${ro}" ${RV.rt} ./output.docx
   navigator.clipboard.writeText(prompt).then(()=>toast('Prompt copied'));
 }
 
@@ -2989,12 +3470,14 @@ function importFromExtension() {
     const incomingContacts = data.contacts || (Array.isArray(data) ? data : []);
     const incomingPipeline = data.pipeline || [];
     
+    const importBase = Date.now() * 1000;
+    let importSeq = 0;
     let contactsAdded = 0;
     incomingContacts.forEach(c => {
       const exists = OT_STATE.contacts.some(x => x.company?.toLowerCase() === c.company?.toLowerCase());
       if (!exists && c.company) {
         OT_STATE.contacts.push({
-          id: Date.now() + Math.random(),
+          id: importBase + importSeq++,
           company: c.company,
           tier: c.tier || (c.scoreFromExt >= 75 ? '1' : '2'),
           role: c.role || '',
@@ -3014,7 +3497,7 @@ function importFromExtension() {
       const exists = STATE.pipeline.some(x => x.company?.toLowerCase() === r.company?.toLowerCase() && x.role?.toLowerCase() === r.role?.toLowerCase());
       if (!exists && r.company) {
         STATE.pipeline.push({
-          id: Date.now() + Math.random(),
+          id: importBase + importSeq++,
           company: r.company,
           role: r.role || 'BD Role',
           url: r.url || '',
@@ -3049,18 +3532,10 @@ function importFromExtension() {
 
 // ==================== NETWORK MAP ====================
 
-// SETUP: Network paths are derived from your outreach tracker contacts.
-// Add companies to the outreach tracker and fill in the "contact" and "pov" fields.
-// The network map will show connection strength based on that data.
-// COMPANY_PATHS can be manually seeded here with known warm connections.
-const NETWORK = {};
+// Network assets - warm connection paths per company/domain
+const NETWORK = {
+  const COMPANY_PATHS = { 'Acme Corp': { warmPath:'partner', strength:3, connection:'Direct contact', angle:'Relevant experience', nudge:'Reach out regarding open role' } };
 
-// Add your specific warm network paths here. Example structure:
-// const COMPANY_PATHS = {
-//   'Google': { warmPath:'alumni', strength:2, connection:'Former colleague moved to Partnerships team', angle:'Your shared context and direct product expertise', nudge:'Reach out via LinkedIn referencing your shared time at [Company]' },
-//   'Anthropic': { warmPath:'community', strength:1, connection:'Mutual in the AI research community', angle:'Your technical background and AI-native experience', nudge:'Ask for intro through mutual contact' },
-// };
-const COMPANY_PATHS = {};
 
 let selectedNetworkCompany = null;
 
@@ -3158,7 +3633,9 @@ Nudge strategy: ${path.nudge}` : 'No warm path mapped - need cold outreach strat
 ${contact?.contact ? `\nNamed contact: ${contact.contact}` : ''}
 ${contact?.pov ? `\nMy POV / value add: ${contact.pov}` : ''}
 
-My background is in CLAUDE.md. Use that context for this outreach strategy.
+My background metrics are available in CLAUDE.md. Use that context for this prompt.
+
+My network assets: [Your key network hubs or former colleagues].
 
 Generate:
 1. Exactly who to reach out to at ${company} - name/title if possible, or the right function to target
@@ -3186,7 +3663,7 @@ const DIGEST_CONFIG_KEY = 'jobos_digest_config';
 
 function loadDigestConfig() {
   const saved = localStorage.getItem(DIGEST_CONFIG_KEY);
-  return saved ? JSON.parse(saved) : { minScore:65, alwaysInclude:'', sources:'LinkedIn, Indeed, Glassdoor', nudgeDays:10 };
+  return saved ? JSON.parse(saved) : { minScore:65, alwaysInclude:'Tenstorrent, Nothing.tech, Microsoft', sources:'LinkedIn, Welcome to the Jungle', nudgeDays:10 };
 }
 
 function saveDigestConfig() {
@@ -3278,7 +3755,7 @@ function generateAppsScript() {
 // Paste this into script.google.com and set a daily trigger at 7am
 
 function sendMorningDigest() {
-  const RECIPIENT = "YOUR_EMAIL@gmail.com"; // SETUP: Replace with your Gmail address
+  const RECIPIENT = "your.email@example.com";
   const TODAY = new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
 
   // Search LinkedIn job alerts from last 24 hours
@@ -3290,9 +3767,9 @@ function sendMorningDigest() {
     jobSection += body + "\\n---\\n";
   });
 
-  // Search for recruiter replies - update keywords to match your target role titles
+  // Search for recruiter replies
   const replyThreads = GmailApp.search(
-    'to:YOUR_EMAIL@gmail.com (recruiter OR "hiring manager" OR "your application") -from:linkedin.com -from:noreply newer_than:1d'
+    'to:your.email@example.com (partnerships OR "business development" OR recruiter) -from:linkedin.com -from:noreply newer_than:1d'
   );
   let replySection = replyThreads.length > 0
     ? replyThreads.map(t => t.getMessages()[0].getSubject() + " - from: " + t.getMessages()[0].getFrom()).join("\\n")
@@ -3382,17 +3859,22 @@ const PILLAR_CONFIGS = {
         <input type="text" id="post-lesson-text" placeholder="e.g. Partner programs that look impressive on paper almost always die for the same 3 reasons">
       </div>
       <div class="input-row">
-        <label class="input-label">Where you learned it (one phrase)</label>
-        <input type="text" id="post-lesson-source" placeholder="e.g. Building my first enterprise partnership program at [Company]">
+        <label class="input-label">Where you learned it</label>
+        <select id="post-lesson-source" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 12px;">
+          <option value="general">Top career highlight</option>
+          <option value="secondary">Second career highlight</option>
+          
+          <option value="general">General BD/partnerships experience</option>
+        </select>
       </div>`,
     buildPrompt: () => {
-      const lesson = document.getElementById('post-lesson-text').value || 'A hard-won lesson from my career';
-      const source = document.getElementById('post-lesson-source').value || 'years of experience in my field';
+      const lesson = document.getElementById('post-lesson-text').value || 'Partner programs fail for a predictable set of reasons';
+      const source = document.getElementById('post-lesson-source').value;
+      const sourceLabel = { company:'company ISV program (1,000+ ISVs, $1M→$100M)', company:'company as first BD hire ($9M at 120% of goal)', company:'company new channel incubation ($200M+ in new revenue)', general:'15+ years of BD/partnerships experience' }[source];
       return `Run /post for the "lesson" pillar using the rules in WORKFLOW_GUIDE.md.
 
 <lesson>${lesson}</lesson>
-<learned_from>${source}</learned_from>
-<background>My background is in CLAUDE.md - use those specifics to make the example concrete.</background>`;
+<learned_from>${sourceLabel}</learned_from>`;
     }
   },
   observation: {
@@ -3400,11 +3882,11 @@ const PILLAR_CONFIGS = {
     fields: `
       <div class="input-row">
         <label class="input-label">What are you observing?</label>
-        <input type="text" id="post-obs-topic" placeholder="e.g. Most companies are still treating AI as a product feature, not an infrastructure shift">
+        <input type="text" id="post-obs-topic" placeholder="e.g. MCP is becoming the de facto API layer for AI partnerships - most BD teams haven't noticed">
       </div>
       <div class="input-row">
         <label class="input-label">What does it mean for your field?</label>
-        <textarea id="post-obs-implication" rows="2" placeholder="e.g. This means [professionals in your field] need to rethink how they approach [specific decision or process]..."></textarea>
+        <textarea id="post-obs-implication" rows="2" placeholder="e.g. If MCP is the new integration standard, partner programs need to be built around capability exposure, not data access..."></textarea>
       </div>`,
     buildPrompt: () => {
       const obs = document.getElementById('post-obs-topic').value || 'Something significant is shifting in how AI companies structure partnerships';
@@ -3475,25 +3957,88 @@ function selectPillar(id) {
       <input type="text" id="post-extra" placeholder="Any specific story, metric, or angle to include...">
     </div>
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="generatePost()">Copy post prompt →</button>
+      <button class="btn btn-primary" onclick="generatePost()">Generate with Claude →</button>
     </div>`;
 }
 
-function generatePost() {
+async function generatePost() {
   const config = PILLAR_CONFIGS[selectedPillar];
   if (!config) { toast('Select a content pillar first'); return; }
   const outEl = document.getElementById('post-output');
   const cardEl = document.getElementById('post-output-card');
   if (!outEl || !cardEl) return;
+  cardEl.style.display = 'block';
+  outEl.innerHTML = '<span style="font-family:var(--mono);font-size:10px;color:var(--text3);">Generating<span style="animation:blink 1s infinite">...</span></span>';
 
   const extra = document.getElementById('post-extra')?.value?.trim() || '';
   lastPostPrompt = config.buildPrompt() + (extra ? '\n\nExtra context: ' + extra : '');
 
-  cardEl.style.display = 'block';
-  outEl.textContent = lastPostPrompt;
-  document.getElementById('post-char-count').textContent = 'Paste this prompt into your Claude Project to generate the post.';
-  navigator.clipboard.writeText(lastPostPrompt).then(() => toast('Post prompt copied - paste into Claude Projects'));
-  logUsage('/post', config.title);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        stream: true,
+        system: "You are a ghostwriter for a senior professional. Write LinkedIn posts that are practitioner-grade, specific, and direct. Never write generic content. Never start with 'Excited to share' or 'Hot take:'. Write in first person, confident, with real examples.",
+        messages: [{ role: 'user', content: lastPostPrompt }]
+      })
+    });
+    outEl.textContent = '';
+    let full = '';
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      for (const line of dec.decode(value).split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        try { const d = JSON.parse(line.slice(6)); if (d.delta?.text) { full += d.delta.text; outEl.textContent = full; } } catch(e) {}
+      }
+    }
+    document.getElementById('post-char-count').textContent = `${full.length} characters · ${full.split(/\s+/).length} words`;
+    savePostToHistory(full, selectedPillar);
+    logUsage('/post', config.title);
+    toast('Post generated');
+  } catch(err) {
+    outEl.textContent = 'Could not connect to Claude API. Copy the prompt below and paste into Claude manually.';
+    navigator.clipboard.writeText(lastPostPrompt);
+    toast('Prompt copied - paste into Claude');
+  }
+}
+
+async function regeneratePost() {
+  if (!lastPostPrompt) { toast('Generate a post first'); return; }
+  const outEl = document.getElementById('post-output');
+  outEl.textContent = 'Regenerating...';
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        stream: true,
+        system: "You are a ghostwriter for a senior professional. Write LinkedIn posts that are practitioner-grade, specific, and direct. Each regeneration should take a meaningfully different angle or opening.",
+        messages: [{ role: 'user', content: lastPostPrompt + '\n\n(Generate a different version with a different opening hook and structure)' }]
+      })
+    });
+    outEl.textContent = '';
+    let full = '';
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      for (const line of dec.decode(value).split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        try { const d = JSON.parse(line.slice(6)); if (d.delta?.text) { full += d.delta.text; outEl.textContent = full; } } catch(e) {}
+      }
+    }
+    document.getElementById('post-char-count').textContent = `${full.length} characters · ${full.split(/\s+/).length} words`;
+    savePostToHistory(full, selectedPillar);
+  } catch(err) { outEl.textContent = 'Error regenerating. Try again.'; }
 }
 
 function copyPostOutput() {
@@ -3934,6 +4479,57 @@ function importFullExport(jsonString) {
 
 // ==================== END WEEKLY EXPORT ====================
 
+// ==================== DAILY AFFIRMATION ====================
+const AFFIRMATIONS = [
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "Your network is your net worth. Every conversation is an asset.", author: "Porter Gale" },
+  { text: "You are not the product of your circumstances. You are the product of your decisions.", author: "Stephen Covey" },
+  { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese proverb" },
+  { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { text: "Don't watch the clock. Do what it does - keep going.", author: "Sam Levenson" },
+  { text: "Confidence is not they will like me. Confidence is I'll be fine if they don't.", author: "Christina Grimmie" },
+  { text: "The harder I work, the more luck I seem to have.", author: "Thomas Jefferson" },
+  { text: "Success is where preparation and opportunity meet.", author: "Bobby Unser" },
+  { text: "Do not go where the path may lead. Go instead where there is no path and leave a trail.", author: "Ralph Waldo Emerson" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { text: "The people who are crazy enough to think they can change the world are the ones who do.", author: "Steve Jobs" },
+  { text: "Great things are not done by impulse, but by a series of small things brought together.", author: "Vincent Van Gogh" },
+  { text: "A year from now you may wish you had started today.", author: "Karen Lamb" },
+  { text: "I am not a product of my circumstances. I am a product of my decisions.", author: "Stephen Covey" },
+  { text: "What you do speaks so loudly that I cannot hear what you say.", author: "Ralph Waldo Emerson" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+  { text: "Your time is limited, so don't waste it living someone else's life.", author: "Steve Jobs" },
+  { text: "The question isn't who is going to let me; it's who is going to stop me.", author: "Ayn Rand" },
+  { text: "Strength doesn't come from what you can do. It comes from overcoming the things you once thought you couldn't.", author: "Rikki Rogers" },
+  { text: "You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.", author: "Dr. Seuss" },
+  { text: "Act as if what you do makes a difference. It does.", author: "William James" },
+  { text: "Success is not final, failure is not fatal. It is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+  { text: "The only limit to our realization of tomorrow will be our doubts of today.", author: "Franklin D. Roosevelt" },
+  { text: "We generate fears while we sit. We overcome them by action.", author: "Dr. Henry Link" },
+  { text: "Whether you think you can or think you can't, you're right.", author: "Henry Ford" },
+  { text: "The man who has confidence in himself gains the confidence of others.", author: "Hasidic proverb" },
+  { text: "Inaction breeds doubt and fear. Action breeds confidence and courage.", author: "Dale Carnegie" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Each morning we are born again. What we do today is what matters most.", author: "Buddha" },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+];
+
+function renderDailyAffirmation() {
+  const now = new Date();
+  // Use day-of-year so the quote is stable all day and changes each morning
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / 86400000);
+  const q = AFFIRMATIONS[dayOfYear % AFFIRMATIONS.length];
+  const textEl = document.getElementById('affirmation-text');
+  const authEl = document.getElementById('affirmation-author');
+  if (textEl) textEl.textContent = q.text;
+  if (authEl) authEl.textContent = '- ' + q.author;
+}
+
 function init() {
   // Live date - updates every time the file is opened
   const now = new Date();
@@ -3946,8 +4542,10 @@ function init() {
   if (eyebrow) eyebrow.textContent = `${dateStr} · ${greeting}`;
   const digestDate = document.getElementById('digest-date-heading');
   if (digestDate) digestDate.textContent = `Today's digest - ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  renderDailyAffirmation();
   renderDashboardCalendar();
   renderPipelineMini();
+  updateInboxBadge();
   renderActivityGrid();
   updateSidebarStats();
   renderScoreHistory();
@@ -3966,10 +4564,6 @@ function init() {
 
 // ==================== OUTREACH TRACKER ====================
 
-// SETUP: Add your target companies here, or use the "+ Add company" button in the dashboard.
-// Each entry: id (number), company, tier ('1'|'2'|'3'|''), role, contact, pov (your angle/why), followups (number), lastOutreach (date string), status, selected (false)
-// Example:
-// {id:1,company:'Acme Corp',tier:'1',role:'Head of Partnerships',contact:'',pov:'Your unique angle for this company',followups:0,lastOutreach:'',status:'Not Started',selected:false},
 const OUTREACH_SEED = [];
 
 const OT_KEY = 'jobos_outreach_v1';
@@ -3979,11 +4573,21 @@ function loadOutreach() {
     const raw = localStorage.getItem(OT_KEY);
     if (raw) return JSON.parse(raw);
   } catch(e) {}
+  window._jobosOutreachWasEmpty = true;
   return { contacts: JSON.parse(JSON.stringify(OUTREACH_SEED)), dailyLog: {} };
 }
 
 function saveOutreach() {
   try { localStorage.setItem(OT_KEY, JSON.stringify(OT_STATE)); } catch(e) {}
+  // Mirror to extension backup so clearing cookies doesn't wipe the tracker
+  try {
+    const extId = window.JOBOS_EXT_ID || document.documentElement.dataset.jobosExtId;
+    if (extId && typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage(extId, { action: 'saveOutreachBackup', state: OT_STATE }, () => {
+        if (chrome.runtime.lastError) {}
+      });
+    }
+  } catch(e) {}
 }
 
 let OT_STATE = loadOutreach();
@@ -4031,7 +4635,13 @@ function renderOutreachTable() {
       <td style="padding:9px 8px;font-weight:500;font-size:13px;${_done?'color:var(--text3);text-decoration:line-through;text-decoration-color:var(--text3);':'color:var(--text);'}">${c.company}</td>
       <td style="padding:9px 8px;font-family:var(--mono);font-size:10px;color:var(--text3);">${c.tier ? 'T'+c.tier : '-'}</td>
       <td style="padding:9px 8px;font-size:12px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.role||'-'}</td>
-      <td style="padding:9px 8px;font-size:12px;color:var(--text2);">${c.contact||'-'}</td>
+      <td style="padding:5px 8px;">
+        <input type="text" value="${(c.contact||'').replace(/"/g,'&quot;')}" placeholder="Add contact…"
+          onchange="updateOTContact(${c.id},this.value)"
+          style="background:transparent;border:none;border-bottom:1px dashed transparent;font-size:12px;color:var(--text2);font-family:var(--sans);width:115px;cursor:text;outline:none;"
+          onfocus="this.style.borderBottomColor='var(--border2)'"
+          onblur="this.style.borderBottomColor='transparent'">
+      </td>
       <td style="padding:9px 8px;">
         <select onchange="updateOTStatus(${c.id},this.value)" style="background:transparent;border:none;font-family:var(--mono);font-size:10px;padding:3px 6px;border-radius:10px;cursor:pointer;${sc}">
           ${['Not Started','Reached Out','Follow-up Sent','Replied','Interviewing','Researching','Not Interested'].map(s=>`<option value="${s}" ${c.status===s?'selected':''}>${s}</option>`).join('')}
@@ -4072,6 +4682,11 @@ function updateOTStatus(id, status) {
   updateOutreachMetrics();
   renderStatusBreakdown();
   logUsage('/outreach', `${c.company} → ${status}`);
+}
+
+function updateOTContact(id, value) {
+  const c = OT_STATE.contacts.find(x => x.id === id);
+  if (c) { c.contact = value.trim(); saveOutreach(); }
 }
 
 function logOutreachToday(id) {
@@ -4241,12 +4856,12 @@ function generateOutreachPrompt() {
 
 Draft a LinkedIn outreach message under 80 words for ${c.company}.
 - Reference something specific about their ecosystem or current AI strategy
-- Lead with my most relevant angle from CLAUDE.md (your strongest proof point for this company's context)
+- Lead with my most relevant angle: your strongest specific achievements, depending on what fits
 - Do NOT mention I am applying - earn a conversation first
 - Specific, not a template`;
   }).join('\n\n');
 
-  const fullPrompt = `Generate personalized outreach messages for these ${selected.length} companies.\n\nMy full background, metrics, and strongest proof points are in CLAUDE.md. Use that context for this prompt.\n\n${prompts}`;
+  const fullPrompt = `Generate personalized outreach messages for these ${selected.length} companies.\n\nMy full background and metrics are available in CLAUDE.md. Use that context for this prompt.\n\n${prompts}`;
 
   const el = document.getElementById('ot-prompt-text');
   const outWrap = document.getElementById('ot-prompt-out');
@@ -4291,6 +4906,40 @@ function addContact() {
   ['ac-company','ac-role','ac-contact','ac-pov','ac-date'].forEach(id => document.getElementById(id).value = '');
 }
 
+// ── LIVE SYNC HELPERS (called by chrome.scripting.executeScript world:MAIN) ──
+// Exposed on window so the injected function can reach them.
+// Closures here give access to STATE, OT_STATE, and all render functions.
+window._jobosLiveSyncPipeline = function(item) {
+  try {
+    const exists = STATE.pipeline.some(r =>
+      r.company?.toLowerCase() === item.company?.toLowerCase() &&
+      r.role?.toLowerCase() === item.role?.toLowerCase()
+    );
+    if (exists) return false;
+    STATE.pipeline.push(item);
+    saveState();
+    renderPipelineMini();
+    buildPipelinePrompt();
+    renderInbox();
+    updateInboxBadge();
+    return true;
+  } catch(e) { return false; }
+};
+
+window._jobosLiveSyncOutreach = function(item) {
+  try {
+    const exists = OT_STATE.contacts.some(c =>
+      c.company?.toLowerCase() === item.company?.toLowerCase()
+    );
+    if (exists) return false;
+    OT_STATE.contacts.push(item);
+    saveOutreach();
+    renderOutreachTable();
+    updateOutreachMetrics();
+    return true;
+  } catch(e) { return false; }
+};
+
 // ── EXTENSION SYNC STATUS ────────────────────────────
 const EXT_SYNC_KEY = 'jobos_ext_sync_ts';
 
@@ -4320,6 +4969,7 @@ function renderExtSyncStatus() {
 // ── EXTENSION AUTO-SYNC ───────────────────────────────
 // On every dashboard load, if the Job Search OS extension is installed,
 // pull any queued pipeline/outreach items and import them automatically.
+// Also restores full state from the extension backup when localStorage was cleared.
 function checkExtensionSync() {
   const extId = window.JOBOS_EXT_ID || document.documentElement.dataset.jobosExtId;
   const el = document.getElementById('ext-sync-status');
@@ -4331,96 +4981,139 @@ function checkExtensionSync() {
     if (el) { el.textContent = '○ Extension messaging unavailable (open via https)'; el.style.color = 'var(--text3)'; }
     return;
   }
+  try {
+    const needsStateRestore = !!window._jobosLocalStorageWasEmpty;
+    const needsOutreachRestore = !!window._jobosOutreachWasEmpty;
 
-  const runPendingSync = (extId) => {
-    try {
-      chrome.runtime.sendMessage(extId, { action: 'getPendingSync' }, resp => {
-        if (chrome.runtime.lastError) {
-          if (el) { el.textContent = '○ Extension unreachable - reload extension at chrome://extensions'; el.style.color = 'var(--amber)'; }
-          return;
-        }
-        if (!resp) {
-          if (el) { el.textContent = '○ No response from extension'; el.style.color = 'var(--amber)'; }
-          return;
-        }
-        const incomingContacts = resp.contacts || [];
-        const incomingPipeline = resp.pipeline || [];
-        let contactsAdded = 0, pipelineAdded = 0;
+    // No restores needed — go straight to pending sync
+    if (!needsStateRestore && !needsOutreachRestore) {
+      doPendingSync(extId, el);
+      return;
+    }
 
-        incomingContacts.forEach(c => {
-          const exists = OT_STATE.contacts.some(x => x.company?.toLowerCase() === c.company?.toLowerCase());
-          if (!exists && c.company) {
-            OT_STATE.contacts.push({
-              id: Date.now() + Math.random(),
-              company: c.company,
-              tier: c.tier || (c.scoreFromExt >= 75 ? '1' : '2'),
-              role: c.role || '',
-              contact: c.contact || '',
-              pov: c.pov || (c.scoreFromExt ? `Scored ${c.scoreFromExt}% in extension` : ''),
-              followups: 0,
-              lastOutreach: c.lastOutreach || '',
-              status: c.status || 'Not Started',
-              selected: false
-            });
-            contactsAdded++;
-          }
-        });
+    // Restore whichever backups are needed in parallel, then proceed with pending sync.
+    let stateRestored = !needsStateRestore;
+    let outreachRestored = !needsOutreachRestore;
 
-        incomingPipeline.forEach(r => {
-          const exists = STATE.pipeline.some(x =>
-            x.company?.toLowerCase() === r.company?.toLowerCase() &&
-            x.role?.toLowerCase() === r.role?.toLowerCase()
-          );
-          if (!exists && r.company) {
-            STATE.pipeline.push({
-              id: Date.now() + Math.random(),
-              company: r.company,
-              role: r.role || 'BD Role',
-              url: r.url || '',
-              stage: r.stage || 'Applied',
-              health: r.health || 'green',
-              addedAt: r.addedAt || new Date().toISOString(),
-              lastAction: r.lastAction || new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' }),
-              nextStep: r.nextStep || 'Awaiting response'
-            });
-            pipelineAdded++;
-          }
-        });
+    function afterRestores() {
+      if (stateRestored && outreachRestored) doPendingSync(extId, el);
+    }
 
-        if (contactsAdded > 0) saveOutreach();
-        if (pipelineAdded > 0) saveState();
-
-        // Clear the extension queue so items don't re-sync on next load
-        chrome.runtime.sendMessage(extId, { action: 'acknowledgePendingSync' }, () => {});
-
-        const total = contactsAdded + pipelineAdded;
-        if (total > 0) {
+    if (needsStateRestore) {
+      chrome.runtime.sendMessage(extId, { action: 'loadStateBackup' }, backupResp => {
+        if (!chrome.runtime.lastError && backupResp?.state?.pipeline?.length) {
+          STATE = backupResp.state;
+          saveState();
+          window._jobosLocalStorageWasEmpty = false;
           renderPipelineMini();
+          renderActivityGrid();
+          if (document.getElementById('panel-pipeline')?.classList.contains('active')) {
+            renderPipeline();
+            buildPipelinePrompt();
+          }
+          toast('Pipeline restored from extension backup');
+        }
+        stateRestored = true;
+        afterRestores();
+      });
+    }
+
+    if (needsOutreachRestore) {
+      chrome.runtime.sendMessage(extId, { action: 'loadOutreachBackup' }, backupResp => {
+        if (!chrome.runtime.lastError && backupResp?.state?.contacts?.length) {
+          OT_STATE = backupResp.state;
+          saveOutreach();
+          window._jobosOutreachWasEmpty = false;
           renderOutreachTable();
           updateOutreachMetrics();
-          toast(`Auto-synced ${total} item${total === 1 ? '' : 's'} from extension`);
-          setExtSyncStatus(`Synced ${total} item${total === 1 ? '' : 's'} from extension`, true);
-        } else {
-          setExtSyncStatus('Extension connected · no new items', false);
+          toast('Outreach tracker restored from extension backup');
+        }
+        outreachRestored = true;
+        afterRestores();
+      });
+    }
+  } catch(e) { /* extension not installed or not reachable */ }
+}
+
+function doPendingSync(extId, el) {
+  try {
+    chrome.runtime.sendMessage(extId, { action: 'getPendingSync' }, resp => {
+      if (chrome.runtime.lastError) {
+        if (el) { el.textContent = '○ Extension unreachable - reload extension at chrome://extensions'; el.style.color = 'var(--amber)'; }
+        return;
+      }
+      if (!resp) {
+        if (el) { el.textContent = '○ No response from extension'; el.style.color = 'var(--amber)'; }
+        return;
+      }
+      const incomingContacts = resp.contacts || [];
+      const incomingPipeline = resp.pipeline || [];
+      let contactsAdded = 0, pipelineAdded = 0;
+      // Use ms*1000+seq so all IDs in a batch are unique safe integers (no float precision collision)
+      const batchBase = Date.now() * 1000;
+      let batchSeq = 0;
+
+      incomingContacts.forEach(c => {
+        const exists = OT_STATE.contacts.some(x => x.company?.toLowerCase() === c.company?.toLowerCase());
+        if (!exists && c.company) {
+          OT_STATE.contacts.push({
+            id: batchBase + batchSeq++,
+            company: c.company,
+            tier: c.tier || (c.scoreFromExt >= 75 ? '1' : '2'),
+            role: c.role || '',
+            contact: c.contact || '',
+            pov: c.pov || (c.scoreFromExt ? `Scored ${c.scoreFromExt}% in extension` : ''),
+            followups: 0,
+            lastOutreach: c.lastOutreach || '',
+            status: c.status || 'Not Started',
+            selected: false
+          });
+          contactsAdded++;
         }
       });
-    } catch(e) { /* extension not installed or not reachable */ }
-  };
 
-  if (window._localStorageWasEmpty) {
-    chrome.runtime.sendMessage(extId, { action: 'loadStateBackup' }, resp => {
-      if (!chrome.runtime.lastError && resp?.state?.pipeline?.length) {
-        STATE = resp.state;
-        saveState();
-        window._localStorageWasEmpty = false;
-        init(); // re-renders UI
-        toast('State restored from extension backup');
+      incomingPipeline.forEach(r => {
+        const exists = STATE.pipeline.some(x =>
+          x.company?.toLowerCase() === r.company?.toLowerCase() &&
+          x.role?.toLowerCase() === r.role?.toLowerCase()
+        );
+        if (!exists && r.company) {
+          STATE.pipeline.push({
+            id: batchBase + batchSeq++,
+            company: r.company,
+            role: r.role || 'BD Role',
+            url: r.url || '',
+            stage: INBOX_STAGE,
+            health: r.health || 'green',
+            addedAt: r.addedAt || new Date().toISOString(),
+            lastAction: r.lastAction || new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' }),
+            nextStep: r.nextStep || 'Review and decide',
+            scoreFromExt: r.scoreFromExt || null,
+            jd: r.jd || ''
+          });
+          pipelineAdded++;
+        }
+      });
+
+      if (contactsAdded > 0) saveOutreach();
+      if (pipelineAdded > 0) saveState();
+
+      // Clear the extension queue so items don't re-sync on next load
+      chrome.runtime.sendMessage(extId, { action: 'acknowledgePendingSync' }, () => {});
+
+      const total = contactsAdded + pipelineAdded;
+      if (total > 0) {
+        renderPipelineMini();
+        renderOutreachTable();
+        updateOutreachMetrics();
+        if (pipelineAdded > 0) { renderInbox(); updateInboxBadge(); }
+        toast(`Auto-synced ${total} item${total === 1 ? '' : 's'} from extension`);
+        setExtSyncStatus(`Synced ${total} item${total === 1 ? '' : 's'} from extension`, true);
+      } else {
+        setExtSyncStatus('Extension connected · no new items', false);
       }
-      runPendingSync(extId);
     });
-  } else {
-    runPendingSync(extId);
-  }
+  } catch(e) { /* extension not installed or not reachable */ }
 }
 
 </script>

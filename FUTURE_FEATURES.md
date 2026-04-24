@@ -4,6 +4,30 @@ This document tracks proposed enhancements for future versions of the Job Search
 
 ---
 
+## Shipped in v4.9
+- **Live sync fix** ✓ — Extension items appear in dashboard immediately without refresh via MAIN-world helpers.
+- **ID stability** ✓ — Migrated to timestamp-based unique IDs to prevent sync collisions.
+- **JD preprocessing** ✓ — Auto-trimming of boilerplate from JDs to save tokens.
+- **Outreach inline editing** ✓ — Live contact editing directly in the outreach table.
+- **Externalized Gmail search** ✓ — `SOURCES.md` file for managing briefing sources.
+
+## Shipped in v4.8
+
+- **Company Research** ✓ — Context-aware Claude research (news, priorities, ecosystem) for every role in the resume builder.
+- **Apply feedback loop** ✓ — "Mark as sent" stamps appliedAt and updates pipeline role after prompt generation.
+
+## Shipped in v4.7
+
+- **Outreach tracker backup** ✓ — Clearing browser cookies no longer wipes the outreach tracker. Backed up to `chrome.storage.local` on every save, auto-restored on next load.
+
+## Shipped in v4.6
+
+- **Role inbox / triage queue** ✓ — "To Review" stage, Inbox panel, Apply/Resume/Pass actions, extension routes to inbox by default.
+- **Daily affirmation** ✓ — Rotating quote at top of dashboard, stable all day, changes each morning.
+- **Resume fill from extension** ✓ — "→ Fill /resume" button sends company, role, and JD directly into Step 1 fields.
+
+---
+
 ## 1. Intelligence & Automation
 
 ### Semantic Bullet Search
@@ -37,6 +61,7 @@ This document tracks proposed enhancements for future versions of the Job Search
 ### Lightweight Backend (Cloud Sync)
 - **Feature**: Replace `localStorage` with a Supabase or Firebase backend.
 - **Impact**: Seamless syncing between laptop, desktop, and mobile without manual JSON export/import.
+- **Status**: Partially addressed in v4.5 - `chrome.storage.local` now acts as a persistent backup that survives browser restarts. Full cross-device sync still requires a backend.
 
 ### Gmail/Calendar MCP Connector (Native)
 - **Feature**: A dedicated Node.js helper that runs locally to provide Claude with direct, authenticated access to Gmail and Calendar.
@@ -51,9 +76,9 @@ This document tracks proposed enhancements for future versions of the Job Search
 - **Impact**: Better visual feedback on "search velocity."
 
 ### Interactive Referral Network
-- **Feature**: A visual graph (D3.js) showing the connections between your target companies and your warm referral paths.
-- **Impact**: Easier identification of cluster opportunities where one contact might unlock multiple companies.
+- **Feature**: A visual graph (D3.js) showing the connections between your 59 target companies and your 20+ priority referral paths.
+- **Impact**: Easier identification of cluster opportunities where one contact might unlock three companies.
 
 ---
 
-*Last updated: April 13, 2026*
+*Last updated: April 23, 2026 · v4.9*

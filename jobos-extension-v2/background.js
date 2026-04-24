@@ -137,32 +137,30 @@ async function tryLiveSyncToDashboard(type, item) {
           func: (type, item) => {
             try {
               if (type === 'pipeline') {
+                // Use dashboard helper if available (updates STATE in-memory + re-renders)
+                if (typeof _jobosLiveSyncPipeline === 'function') return _jobosLiveSyncPipeline(item);
+                // Fallback: write to localStorage only (shows on next page refresh)
                 const raw = localStorage.getItem('jobos_v3');
                 const state = raw ? JSON.parse(raw) : { pipeline: [], history: [], scores: [], stats: {} };
                 state.pipeline = state.pipeline || [];
-                const exists = state.pipeline.some(r =>
+                if (state.pipeline.some(r =>
                   r.company?.toLowerCase() === item.company?.toLowerCase() &&
                   r.role?.toLowerCase() === item.role?.toLowerCase()
-                );
-                if (exists) return false;
+                )) return false;
                 state.pipeline.push(item);
                 localStorage.setItem('jobos_v3', JSON.stringify(state));
-                if (typeof renderPipelineMini === 'function') renderPipelineMini();
-                if (typeof buildPipelinePrompt === 'function') buildPipelinePrompt();
                 return true;
               }
               if (type === 'outreach') {
+                if (typeof _jobosLiveSyncOutreach === 'function') return _jobosLiveSyncOutreach(item);
                 const raw = localStorage.getItem('jobos_outreach_v1');
                 const state = raw ? JSON.parse(raw) : { contacts: [], dailyLog: {} };
                 state.contacts = state.contacts || [];
-                const exists = state.contacts.some(c =>
+                if (state.contacts.some(c =>
                   c.company?.toLowerCase() === item.company?.toLowerCase()
-                );
-                if (exists) return false;
+                )) return false;
                 state.contacts.push(item);
                 localStorage.setItem('jobos_outreach_v1', JSON.stringify(state));
-                if (typeof renderOutreachTable === 'function') renderOutreachTable();
-                if (typeof updateOutreachMetrics === 'function') updateOutreachMetrics();
                 return true;
               }
               return false;
@@ -182,6 +180,35 @@ async function tryLiveSyncToDashboard(type, item) {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'getNudgeCount') {
     getNudgeCount().then(count => sendResponse({ count }));
+    return true;
+  }
+  if (msg.action === 'fillResume') {
+    chrome.storage.local.get(DASHBOARD_KEY, data => {
+      const dashUrl = data[DASHBOARD_KEY];
+      if (!dashUrl) { sendResponse({ filled: false }); return; }
+      chrome.tabs.query({}, tabs => {
+        const norm = url => url.replace(/\/$/, '');
+        const tab = tabs.find(t => t.url && norm(t.url).startsWith(norm(dashUrl)));
+        if (!tab) { sendResponse({ filled: false }); return; }
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          world: 'MAIN',
+          func: (company, role, jd) => {
+            try {
+              if (typeof rvLoadFromScore === 'function') {
+                rvLoadFromScore(company, role, jd);
+                return true;
+              }
+              return false;
+            } catch(e) { return false; }
+          },
+          args: [msg.data.company, msg.data.role, msg.data.jd]
+        }, results => {
+          if (chrome.runtime.lastError) { sendResponse({ filled: false }); return; }
+          sendResponse({ filled: results?.[0]?.result === true });
+        });
+      });
+    });
     return true;
   }
   if (msg.action === 'syncOutreach') {
@@ -211,6 +238,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         existing.contacts = contacts;
         existing.lastUpdated = new Date().toISOString();
         chrome.storage.local.set({ [OUTREACH_SYNC_KEY]: existing }, async () => {
+          if (chrome.runtime.lastError) { sendResponse({ added: true, liveSynced: false }); return; }
           const liveSynced = await tryLiveSyncToDashboard('outreach', item);
           sendResponse({ added: true, liveSynced });
         });
@@ -224,7 +252,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     chrome.storage.local.get(OUTREACH_SYNC_KEY, async data => {
       const existing = data[OUTREACH_SYNC_KEY] || { contacts: [], pipeline: [], lastUpdated: null };
       const pipeline = existing.pipeline || [];
-      const { company, role, score, url } = msg.data;
+      const { company, role, score, url, jd } = msg.data;
 
       const alreadyExists = pipeline.some(r =>
         r.company?.toLowerCase() === company?.toLowerCase() && r.role?.toLowerCase() === role?.toLowerCase()
@@ -235,17 +263,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           company,
           role: role || '',
           url: url || '',
-          stage: 'Applied',
+          stage: 'To Review',
           health: score >= 75 ? 'green' : score >= 50 ? 'amber' : 'red',
           lastAction: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' }),
-          nextStep: 'Awaiting response',
+          nextStep: 'Review and decide',
           addedAt: new Date().toISOString(),
-          scoreFromExt: score
+          scoreFromExt: score,
+          jd: jd || ''
         };
         pipeline.push(item);
         existing.pipeline = pipeline;
         existing.lastUpdated = new Date().toISOString();
         chrome.storage.local.set({ [OUTREACH_SYNC_KEY]: existing }, async () => {
+          if (chrome.runtime.lastError) { sendResponse({ added: true, liveSynced: false }); return; }
           const liveSynced = await tryLiveSyncToDashboard('pipeline', item);
           sendResponse({ added: true, liveSynced });
         });
@@ -285,18 +315,6 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
     });
     return true;
   }
-  if (msg.action === 'saveStateBackup') {
-    chrome.storage.local.set({ 'jobos_state_backup': msg.state }, () =>
-      sendResponse({ saved: true })
-    );
-    return true;
-  }
-  if (msg.action === 'loadStateBackup') {
-    chrome.storage.local.get('jobos_state_backup', data => {
-      sendResponse({ state: data['jobos_state_backup'] || null });
-    });
-    return true;
-  }
   if (msg.action === 'acknowledgePendingSync') {
     // Dashboard has imported all items — clear the queue so they don't re-sync on next load.
     chrome.storage.local.get(OUTREACH_SYNC_KEY, data => {
@@ -305,6 +323,28 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
       existing.pipeline = [];
       existing.lastUpdated = new Date().toISOString();
       chrome.storage.local.set({ [OUTREACH_SYNC_KEY]: existing }, () => sendResponse({ cleared: true }));
+    });
+    return true;
+  }
+  if (msg.action === 'saveStateBackup') {
+    // Persist full dashboard state to chrome.storage.local so it survives browser restarts
+    // even when the tab's localStorage gets cleared.
+    chrome.storage.local.set({ jobos_v3_backup: msg.state }, () => sendResponse({ saved: true }));
+    return true;
+  }
+  if (msg.action === 'loadStateBackup') {
+    chrome.storage.local.get('jobos_v3_backup', data => {
+      sendResponse({ state: data.jobos_v3_backup || null });
+    });
+    return true;
+  }
+  if (msg.action === 'saveOutreachBackup') {
+    chrome.storage.local.set({ jobos_outreach_backup: msg.state }, () => sendResponse({ saved: true }));
+    return true;
+  }
+  if (msg.action === 'loadOutreachBackup') {
+    chrome.storage.local.get('jobos_outreach_backup', data => {
+      sendResponse({ state: data.jobos_outreach_backup || null });
     });
     return true;
   }

@@ -1,5 +1,5 @@
 # Job Search OS - Developer & LLM Context File
-**Version 4.4 · Open Source**
+**Version 4.8 · April 2026 · Community Edition**
 
 This file is the authoritative reference for any LLM or developer working on the Job Search OS. Read this before touching any file in the system.
 
@@ -7,16 +7,16 @@ This file is the authoritative reference for any LLM or developer working on the
 
 ## What this system is
 
-An AI-powered job search operating system built on Claude. It is a persistent, connected workspace that:
+A personal job search operating system built on Claude for a senior professional. It is a persistent, connected workspace that:
 
-1. Knows the user's professional context via a split knowledge base (`CLAUDE.md`, `BULLET_LIBRARY.md`).
-2. Runs structured interactive workflows via XML-tagged prompts and `WORKFLOW_GUIDE.md`.
-3. Parses email for new job postings and scores them via a morning digest.
+1. Knows the user's professional context via a partitioned knowledge base (`CLAUDE.md`, `BULLET_LIBRARY.md`, `SOURCES.md`).
+2. Runs structural interactive workflows via XML-tagged prompts and `WORKFLOW_GUIDE.md`.
+3. Parses email for new job postings via `/brief` (referencing `SOURCES.md` for senders).
 4. Tracks outreach and pipeline with daily velocity metrics and numeric nudge alerts.
 5. Generates tailored `.docx` resumes via an integrated 5-step builder.
-6. Maps warm referral paths across target companies.
-7. Minimizes token consumption through architectural partitioning of the knowledge base.
-8. **Syncs scored roles directly to outreach OR pipeline** from the Chrome extension.
+6. Maps warm referral paths across priority companies.
+7. Minimizes token consumption through architectural partitioning.
+8. Syncs scored roles directly to outreach OR pipeline from the Chrome extension.
 
 ---
 
@@ -24,95 +24,67 @@ An AI-powered job search operating system built on Claude. It is a persistent, c
 
 ```
 / (root)
-├── index.html                          ← Main dashboard v4.4 (GitHub Pages, single-file app)
-├── CLAUDE.md                           ← Master context template - user fills in identity & metrics
-├── BULLET_LIBRARY.md                   ← Resume bullet library template + Relevance Mapping
-├── WORKFLOW_GUIDE.md                   ← Slash command logic & constraints (upload to Claude Project)
+├── index.html                          ← Main dashboard v4.9 (GitHub Pages)
+├── NEXT_STEPS.md                       ← Improvement backlog
+├── CLAUDE.md                           ← Master context (Identity & Metrics) - Load into Claude
+├── BULLET_LIBRARY.md                   ← Resume bullet raw text + Relevance Mapping - Load into Claude
+├── WORKFLOW_GUIDE.md                   ← Slash command logic & constraints - Load into Claude
+├── SOURCES.md                          ← Gmail senders for /brief - Load into Claude
 ├── FUTURE_FEATURES.md                  ← Roadmap for future development
 ├── DEV_CONTEXT.md                      ← This file
-├── README.md                           ← User-facing setup documentation
-└── jobos-extension-v2/                 ← Chrome extension v2 source (Manifest V3)
-    ├── manifest.json                   ← host_permissions and externally_connectable require YOUR_GITHUB_USERNAME
-    ├── background.js                   ← syncOutreach, syncPipeline, tryLiveSyncToDashboard, onMessageExternal
-    ├── content.js                      ← Job data extraction (LinkedIn, Greenhouse, Lever, Ashby, Indeed, etc.)
-    ├── dashboard_bridge.js             ← Content script injected into dashboard; exposes window.JOBOS_EXT_ID
-    ├── popup.html                      ← Extension popup UI
-    ├── popup.js                        ← Score, brief, apply, network, nudge, sync logic
-    └── icons/                          ← icon16.png, icon48.png, icon128.png
+├── README.md                           ← User-facing documentation
+├── ONBOARDING.md                       ← Setup guide
+└── jobos-extension-v2/                 ← Chrome extension v2 source
 ```
 
 ---
 
-## Architecture overview
+## Architecture overview (v4.3+ Optimized)
 
-### Core design: copy-prompt, not API calls
-
-**All Claude interactions in this system use a copy-prompt pattern.** The dashboard and extension build structured, XML-tagged prompts and copy them to the clipboard. The user pastes them into their Claude Project.
-
-There are **no direct Anthropic API calls** in this codebase. This is intentional:
-- No API key management required for users
-- All context (CLAUDE.md, BULLET_LIBRARY.md, WORKFLOW_GUIDE.md) is automatically included by Claude Projects
-- Consistent behavior across all features
-
-The two features that previously called the API directly (resume rewriter in step 4, LinkedIn post generator) were converted to copy-prompt in v4.4.
-
-If you want to add direct API support in a fork, use `rvMkPrompt()` for resume and `PILLAR_CONFIGS[id].buildPrompt()` for posts — both already build the full prompt string.
-
----
-
-### Three-File Brain (Knowledge Base)
-
-The knowledge base is partitioned into three files uploaded to the user's Claude Project:
-
-1. **`CLAUDE.md`** - Identity, core metrics, interview stories, behavioral instructions. Every Claude turn gets this context automatically via Claude Projects.
-2. **`BULLET_LIBRARY.md`** - All resume bullets plus the Resume Relevance Mapping (which bullet IDs map to which role type). Only relevant for `/apply` and `/resume` workflows.
-3. **`WORKFLOW_GUIDE.md`** - Full logic for all slash commands (`/score`, `/apply`, `/prep`, `/mock`, etc.). Dashboard prompts reference this file rather than repeating the logic inline, saving tokens.
-
-**After editing any of these files, re-upload to the Claude Project.** The Project knowledge base does not auto-sync from GitHub.
-
----
+### Multi-File Brain (Knowledge Base)
+To save tokens, the "brain" is partitioned into specific files uploaded to the Claude Project:
+1. **`CLAUDE.md`**: Essential identity, core metrics, and behavioral instructions. Sent with every message.
+2. **`BULLET_LIBRARY.md`**: Raw text for all bullets plus the Resume Relevance Mapping. Only read during resume/application tasks.
+3. **`WORKFLOW_GUIDE.md`**: Detailed logic for all slash commands.
+4. **`SOURCES.md`**: List of email senders/domains for Claude to search during the `/brief` workflow.
 
 ### Structural Prompting (XML)
-
-Every prompt generated by `index.html` or `popup.js` wraps dynamic data in XML tags:
-
-```
-<role>Head of Partnerships at Acme Corp</role>
-<jd>...full job description...</jd>
-<pipeline>Company A - Applied | Company B - Interviewing</pipeline>
-```
-
-This improves Claude's parsing accuracy and makes prompts deterministic regardless of input formatting.
-
----
+Every prompt generated by `index.html` or `popup.js` uses XML tags (e.g., `<role>`, `<jd>`, `<pipeline>`, `<gmail_sources>`). This improves Claude's parsing accuracy.
 
 ### Extension-to-Dashboard Sync
+The extension writes to `chrome.storage.local`; the dashboard uses `localStorage`. These are bridged in three layers:
 
-The extension writes to `chrome.storage.local`; the dashboard uses `localStorage`. Two layers bridge them:
+**Layer 1 - Live sync (tab open):** When the dashboard tab is already open, `tryLiveSyncToDashboard()` in `background.js` uses `chrome.scripting.executeScript` with `world:'MAIN'` to write directly into the tab's `localStorage` and call the dashboard's render functions. Items appear instantly.
 
-**Layer 1 - Live sync (dashboard tab open):** `tryLiveSyncToDashboard()` in `background.js` uses `chrome.scripting.executeScript` with `world:'MAIN'` to write directly into the tab's `localStorage` and call the dashboard render functions. Items appear instantly without a page reload.
+**Layer 2 - Auto-sync on load (tab not open):** When the user opens the dashboard, `checkExtensionSync()` runs. It reads `window.JOBOS_EXT_ID` (injected by `dashboard_bridge.js`) and calls `chrome.runtime.sendMessage(extId, { action:'getPendingSync' })`. The extension's `onMessageExternal` handler returns all queued contacts and pipeline items from `jobos_outreach_sync`. The dashboard deduplicates and imports them automatically, then calls `renderPipelineMini()`, `renderOutreachTable()`, and `updateOutreachMetrics()`.
 
-**Layer 2 - Auto-sync on load (dashboard tab not open):** When the dashboard loads, `checkExtensionSync()` reads `window.JOBOS_EXT_ID` (set by `dashboard_bridge.js` content script) and calls `chrome.runtime.sendMessage(extId, { action:'getPendingSync' })`. The extension's `onMessageExternal` handler returns all queued contacts and pipeline items. The dashboard deduplicates and imports them, then calls `renderPipelineMini()`, `renderOutreachTable()`, and `updateOutreachMetrics()`.
+**Layer 3 - Full state backup/restore (v4.5 pipeline, v4.7 outreach):** `saveState()` mirrors STATE to `chrome.storage.local['jobos_v3_backup']`; `saveOutreach()` mirrors OT_STATE to `chrome.storage.local['jobos_outreach_backup']`. `loadState()` sets `window._jobosLocalStorageWasEmpty = true` and `loadOutreach()` sets `window._jobosOutreachWasEmpty = true` when their respective keys are missing. `checkExtensionSync()` checks both flags in parallel on every load; if set, it calls `loadStateBackup`/`loadOutreachBackup`, restores STATE/OT_STATE, re-saves to `localStorage`, re-renders the affected panel, and shows a toast. This handles browser privacy settings clearing `localStorage` between sessions. `chrome.storage.local` is never cleared by browser data settings — only by extension uninstall. Requires HTTPS (GitHub Pages); does not work on `file://` origins.
 
-**Fallback - Manual export:** If neither layer works (extension not installed, or wrong GitHub Pages URL configured), the Nudges tab has an "Export scored roles as JSON" button that copies a JSON payload for manual paste into the `/sync` panel.
+**Fallback - Manual export:** If no layer succeeds (e.g. extension not installed), the Nudges tab "Export scored roles as JSON" button copies a JSON payload that can be pasted into the `/sync` panel.
 
-**Configuration required:** Both `manifest.json` (`host_permissions`, `externally_connectable`) and `popup.js` must have `YOUR_GITHUB_USERNAME` replaced with the user's actual GitHub username before the extension is loaded.
+**Key files:**
+- `background.js`: `syncOutreach`, `syncPipeline`, `tryLiveSyncToDashboard`, `onMessageExternal` (includes `saveStateBackup` + `loadStateBackup`)
+- `dashboard_bridge.js`: content script injected at `document_start` into the dashboard page; exposes `window.JOBOS_EXT_ID = chrome.runtime.id`
+- `manifest.json`: `externally_connectable` allows the dashboard origin to message the extension; `host_permissions` includes `YOUR_GITHUB_USERNAME.github.io` for script injection
+- `index.html`: `loadState()` sets `_jobosLocalStorageWasEmpty`; `saveState()` mirrors to extension; `checkExtensionSync()` restores from backup then calls `doPendingSync()`
 
----
-
-### Dashboard (`index.html`)
-
-Single-file web app (~4,500 lines). No build system, no dependencies, no bundler. Deployed to GitHub Pages via the `index.html` naming convention. Includes:
-- Password gate (IIFE, client-side only — basic privacy, not security)
-- All workflow panels (Score, Apply, Referral, Prep, Mock, Debrief, Negotiate, Pattern, Network, Digest, Post, Sync, Export, Resume Builder, Outreach Tracker)
-- Inline CSS with CSS custom properties for theming
-- localStorage-based state, no backend
-
-**Resume builder (`RV_` namespace):** The in-app bullet preview reads from `RV_LIB` (a JavaScript object in `index.html`). Users fill this with their actual company names and bullet IDs to match `BULLET_LIBRARY.md`. The `RV_SEL` object maps role types (enterprise, startup, technical, general) to bullet ID arrays. `rvGetActive()` returns the currently toggled-on bullets. `rvMkPrompt()` builds the Claude rewrite prompt string.
-
-**Outreach tracker (`OT_` namespace):** Starts from `OUTREACH_SEED` (empty array by default). State stored in `localStorage` under `jobos_outreach_v1`. The `generateOutreachPrompt()` function builds copy-prompt output for selected companies.
+### Dashboard Deployment (`index.html`)
+The dashboard is a single-file web app optimized for deployment to **GitHub Pages**. It includes an integrated password gate for basic privacy.
 
 ---
+
+## Pipeline stages
+
+| Stage | Where it lives | Notes |
+|---|---|---|
+| `To Review` | Inbox panel only | Set by extension "Queue for review". Excluded from pipeline table, mini-pipeline, and Claude prompts. `INBOX_STAGE` constant. |
+| `Monitoring` | Pipeline tracker | Watching — not yet applied |
+| `Applied` | Pipeline tracker | Application submitted |
+| `Recruiter screen` | Pipeline tracker | |
+| `HM round` | Pipeline tracker | |
+| `Panel` | Pipeline tracker | |
+| `Offer` | Pipeline tracker | |
+| `Withdrawn` / `Rejected` / `Closed` | Pipeline tracker (dimmed, auto-hide after 1 week) | `CLOSED_STAGES` constant |
 
 ## All localStorage keys
 
@@ -125,36 +97,34 @@ Single-file web app (~4,500 lines). No build system, no dependencies, no bundler
 | `jobos_post_history` | Array of last 20 posts: `[{ text, pillar, date, ts }]` | `/post` panel |
 | `jobos_auth` | `true` if password gate cleared | Password gate |
 
----
+## All chrome.storage.local keys (extension)
 
-## Design principles
-
-**1. Copy-prompt over API calls.** All Claude interactions are copy-paste. No API keys, no auth headers, no CORS issues.
-
-**2. Context partitioning.** Keep slash command logic in `WORKFLOW_GUIDE.md` and bullet data in `BULLET_LIBRARY.md`. `CLAUDE.md` stays lean (identity + metrics only).
-
-**3. XML Tagging.** Wrap all dynamic user data in XML tags before sending to Claude. Never send raw text blocks.
-
-**4. No Em-Dashes.** Hyphens (-) only in all generated text. Em-dashes break some ATS parsers.
-
-**5. No Truncation.** Claude can handle full JDs and full email bodies. Never use `.substring()` to shorten input.
-
-**6. Metrics are non-negotiable.** Never modify numbers from `CLAUDE.md` or `BULLET_LIBRARY.md`. The system prompt explicitly prohibits this.
-
-**7. Strike-through, not delete.** Closed pipeline roles and "Not Interested" companies dim and strike through — they are not removed. Historical record is preserved.
-
-**8. Namespace isolation.** Resume builder: `RV_`/`rv` prefix. Outreach tracker: `OT_`/`ot` prefix. No collisions between subsystems.
+| Key | Contents | Set by |
+|---|---|---|
+| `jobos_ext_v1` | Extension popup state: `{ history[], scores[], stats }` | `popup.js` |
+| `jobos_outreach_sync` | Queue of items scored in extension awaiting dashboard import: `{ contacts[], pipeline[], lastUpdated }` | `background.js` |
+| `jobos_dashboard_url` | Dashboard URL string for live sync targeting | Extension popup Nudges tab |
+| `jobos_gist_url` | Gist URL for profile sync in extension popup | Extension popup |
+| `jobos_v3_backup` | **Full mirror of `jobos_v3`** - updated on every `saveState()` call; used to restore when `localStorage` is cleared (v4.5) | `background.js` `saveStateBackup` handler |
+| `jobos_outreach_backup` | **Full mirror of `jobos_outreach_v1`** - updated on every `saveOutreach()` call; used to restore outreach tracker when `localStorage` is cleared (v4.7) | `background.js` `saveOutreachBackup` handler |
 
 ---
 
-## Setup requirements for new users
+## Design principles (v4.2 Standards)
 
-1. **GitHub account** - for hosting the dashboard via GitHub Pages (free)
-2. **Claude Pro subscription or higher** - for the Claude Projects feature
-3. **Chrome browser** - for the job scoring extension
-4. **Google account** (optional) - for the Gmail digest via Apps Script
+**1. Context partitioning.** Keep instructions in `WORKFLOW_GUIDE.md` and data in `BULLET_LIBRARY.md`.
 
-See `README.md` for the complete step-by-step setup guide.
+**2. XML Tagging.** Wrap all dynamic user data in XML tags. Never send raw text blocks without tagging.
+
+**3. No Em-Dashes.** Standardize on hyphens (-) for all generated text to ensure compatibility with all ATS and resume parsers.
+
+**4. No Truncation.** Claude can handle full JDs. Never use `.substring()` on job descriptions or email bodies.
+
+**5. Metrics are non-negotiable.** Never modify $20M, 120%, 1,000+ ISVs, $1M→$100M.
+
+**6. Strike-through, not delete.** Closed pipeline roles and Not Interested companies should dim and strike-through, not be removed.
+
+**7. Namespace isolation.** Resume: `RV_`/`rv`. Outreach: `OT_`/`ot`. No collisions.
 
 ---
 
@@ -162,12 +132,17 @@ See `README.md` for the complete step-by-step setup guide.
 
 | Version | Date | What changed |
 |---|---|---|
-| v4.4 | April 2026 | **Open-source release.** All personal data removed; generic templates throughout. **Copy-prompt architecture**: `rvRunClaude()` and `generatePost()` converted from broken direct API calls to clipboard copy functions. **Auto-sync on dashboard load**: `dashboard_bridge.js` exposes `window.JOBOS_EXT_ID`; `checkExtensionSync()` pulls queued extension items on every page load. `externally_connectable` added to manifest. `OUTREACH_SEED` cleared to empty array. `Digital Job OS/` duplicate subfolder removed. |
-| v4.3 | April 2026 | **Sync bug fix**: `importFromExtension()` now calls `renderOutreachTable()` and `updateOutreachMetrics()` — imported items appear immediately. **Token optimization**: `CLAUDE.md` reduced 38% — Resume Relevance Mapping moved to `BULLET_LIBRARY.md`. |
-| v4.2 | April 2026 | **Renamed dashboard to `index.html`** for GitHub Pages. Added **password gate**. Split knowledge base into 3 files. XML structural prompting throughout. Removed all JD/email truncation limits. No em-dashes. Direct pipeline sync from extension. |
-| v4.1 | April 2026 | MV3 Extension fix. Pipeline strike-through. Outreach "Not Interested" logic. `/export` weekly Sheets panel. |
-| v4.0 | April 2026 | New Tools: `/sync`, `/network`, `/digest`, `/post`. |
+| v4.9 | April 23, 2026 | **Live sync fix**: added `window._jobosLiveSyncPipeline` / `_jobosLiveSyncOutreach` helpers in `index.html` so `chrome.scripting.executeScript` (world:'MAIN') can update in-memory `STATE`/`OT_STATE` directly — fixes roles added via extension not appearing in dashboard. `background.js` injected script simplified to call helpers; `lastError` guards added to storage.set callbacks (eliminates `background.js:0` console error). **ID collision fix**: replaced `Date.now()+Math.random()` with `Date.now()*1000+seq` in `doPendingSync` and `importJSON`; `loadState()` now runs a migration on every load to re-assign unique IDs to any duplicate pipeline items from pre-fix data. **JD preprocessor**: `preprocessJD()` strips boilerplate paragraphs before Claude prompts (score, apply, resume builder); hard-caps at 700 words; `updateJdStats()` shows live word count + trim % on all three JD textareas. **Resume pipeline buttons**: show `Company · Role` label (truncated), dim when no JD stored, warn via toast. **Outreach inline contact editing**: Contact column is now a live `<input>` — click to type, auto-saves on blur via `updateOTContact(id,value)`. **Language penalty**: `calcPenalties()` now flags foreign-language hard requirements (-18 pts); user speaks Hindi/English only. Applied in both `index.html` and `popup.js`. **LinkedIn extractor overhaul** (`content.js`): layered fallback strategy — class selectors → `a[href*="/company/"]` anchor (stable LinkedIn URL pattern) → `parseCompanyFromTitle(document.title)` handling "at Company", "Title \| Company \| LinkedIn", and "Title · Company" formats → og:title meta. Retry waits for title+company+jobText before responding immediately. **Externalized Gmail search**: added `SOURCES.md` to house senders/domains for `/brief`; updated `WORKFLOW_GUIDE.md` and `runBrief()` to reference external knowledge instead of hardcoded strings. |
+| v4.8 | April 21, 2026 | **Company research in resume builder**: collapsible card at bottom of Step 1 generates a structured Claude prompt (recent news, strategic priorities, ecosystem signals, hiring signals, competitive position scoped to the JD). Paste-back textarea stores summary in `RV.research`; injected as `<company_research>` into `rvMkPrompt()` at Step 4. `rvClearResearch()` resets on new role load. **Apply feedback loop**: `markApplicationSent()` stamps `appliedAt` + updates `lastAction`/stage on the matching pipeline role after apply prompt generates. **Brief memory**: `STATE.lastBrief` persists top actions; next-day `loadBriefYesterday()` shows recap + `<yesterday_update>` block in prompt. **Contact tiers**: added `weak1` (Weak 1st degree) to apply dropdowns in dashboard and extension. **Seniority rule**: SM/Manager titles not penalized unless comp under $150K — rule in `WORKFLOW_GUIDE.md`. **Gmail sources**: Welcome to the Jungle + Microsoft Careers added to brief, 48–72h window. |
+| v4.7 | April 20, 2026 | **Outreach backup**: `saveOutreach()` now mirrors OT_STATE to `chrome.storage.local['jobos_outreach_backup']` via `saveOutreachBackup` message. `loadOutreach()` flags `_jobosOutreachWasEmpty`; `checkExtensionSync()` restores OT_STATE in parallel with STATE when that flag is set, re-renders outreach panel, shows toast. `background.js` gains `saveOutreachBackup`/`loadOutreachBackup` handlers. |
+| v4.6 | April 20, 2026 | **Role inbox**: `INBOX_STAGE = 'To Review'` constant. New `panel-inbox` with `renderInbox()`, `updateInboxBadge()`, `inboxApply()`, `inboxPass()`, `inboxResume()`. Inbox nav item with green badge. Extension `syncPipeline` now routes to `'To Review'` (not `'Applied'`) and passes `jd` field. `popup.html` button renamed "Queue for review". Pipeline table, mini-pipeline, and Claude prompts all filter out inbox stage. **Daily affirmation**: `AFFIRMATIONS` array + `renderDailyAffirmation()` rotates by day-of-year, renders above dashboard header. **Resume fill from extension**: `fillResume` handler in `background.js` + `popup.js` calls `rvLoadFromScore()` in open dashboard tab. |
+| v4.5 | April 16, 2026 | **Persistence fix**: `localStorage` is cleared by browser privacy settings on restart. `saveState()` now mirrors STATE to `chrome.storage.local['jobos_v3_backup']` via `saveStateBackup` message. `loadState()` flags `_jobosLocalStorageWasEmpty`; `checkExtensionSync()` restores from backup if flag is set, re-renders, and shows a toast. `doPendingSync()` extracted as separate function. `chrome.storage.local` is never cleared by browser settings. Requires HTTPS (GitHub Pages). See `PERSISTENCE_FIX.md`. |
+| v4.4 | April 13, 2026 | **Auto-sync on dashboard load**: `dashboard_bridge.js` content script exposes `window.JOBOS_EXT_ID`; `checkExtensionSync()` pulls queued extension items via `onMessageExternal` every time the dashboard opens. `externally_connectable` added to manifest. No manual export/paste needed. |
+| v4.3 | April 13, 2026 | **Sync bug fix**: `importFromExtension()` now calls `renderOutreachTable()` and `updateOutreachMetrics()` - imported items appear immediately. **Extension display fix**: `sync-row` uses `display:flex` so gap renders between tracker/pipeline buttons. **Token optimization**: `CLAUDE.md` reduced 38% (3,311 to 2,057 bytes) - Resume Relevance Mapping moved to `BULLET_LIBRARY.md`, redundant Slash Commands section removed. ~313 tokens saved per turn. |
+| v4.2 | April 13, 2026 | **Renamed dashboard to `index.html`** for GitHub Pages. Added **password gate**. **Full Token Optimization**: Split knowledge base into 3 files. Implemented **XML structural prompting**. Removed all JD/email truncation limits. Standardized punctuation (no em-dashes). **Direct pipeline sync from extension.** |
+| v4.1 | April 12, 2026 | MV3 Extension fix. Pipeline strike-through. Outreach "Not Interested" logic. `/export` weekly Sheets panel. |
+| v4.0 | April 11, 2026 | New Tools: `/sync`, `/network`, `/digest`, `/post`. |
 
 ---
 
-*Job Search OS v4.4 · Open Source · https://github.com/samuraiman2026/JobOS*
+*Last updated: April 23, 2026 · Job Search OS v4.9 · files: index.html, jobos-extension-v2/content.js, jobos-extension-v2/background.js, jobos-extension-v2/popup.js*
